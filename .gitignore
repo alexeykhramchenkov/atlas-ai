@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+
+# ENV
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+
+# Logs
+logs/
+*.log
+
+# Debug
+debug/
+*/debug/
+
+# Chrome profiles
+chrome_profile/
+saleflow_chrome_profile/
+
+# Cache
+.cache/
+.pytest_cache/
+pytest_cache/
+
+# VS Code
+.vscode/
+
+# Raw ingestion data
+ingestion/**/raw/
+ingestion/**/debug/
+
+# Temp
+tmp/
+temp/
