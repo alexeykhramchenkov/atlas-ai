@@ -3,7 +3,7 @@ import hashlib
 import json
 import re
 
-ANALYSIS_VERSION = 'buyer-text-v1'
+ANALYSIS_VERSION = 'buyer-text-v2'
 TEXT_FIELDS = {'review':('text','pros','cons'), 'question':('question_text',)}
 
 

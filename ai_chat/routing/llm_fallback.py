@@ -98,6 +98,7 @@ FUNNEL_CHANGE_SCHEMA = {
     'type':'object', 'additionalProperties':False,
     'properties':{
         'applicable':{'type':'boolean'},
+        'selection':{'type':'string','enum':['store','shown_products']},
         'metric':{'type':'string','enum':list(FUNNEL_METRICS)+['orders_count','orders_amount','cancelled_orders_amount']},
         'direction':{'type':'string','enum':['positive','negative']},
         'answer_scope':{'type':'string','enum':['top','all']},
@@ -105,7 +106,7 @@ FUNNEL_CHANGE_SCHEMA = {
         'start_date':{'type':['string','null']},
         'end_date':{'type':['string','null']},
     },
-    'required':['applicable','metric','direction','answer_scope','period_days','start_date','end_date'],
+    'required':['applicable','selection','metric','direction','answer_scope','period_days','start_date','end_date'],
 }
 
 
@@ -120,6 +121,9 @@ def resolve_funnel_change(question, *, memory, request_context):
     context = {key:memory.get(key) for key in ('last_dataset','last_metric','last_analysis','last_direction','last_view','date_from','date_to')} if contextual else {}
     prompt = '''Parse a seller question about PRODUCTS CONTRIBUTING TO GROWTH OR DECLINE of a funnel count or order amounts.
 Return applicable=true only when asking which products increased/decreased a funnel count or order amounts between periods.
+Resolve the population once: selection=store for a NEW search of products with growth/decline,
+even after an unrelated product list. selection=shown_products ONLY when the current question
+explicitly refers to those/their/previously shown products. An old list alone is not such a reference.
 Use answer_scope=top by default (default relevant-product selection). Explicit request to include
 ALL products, even low/no-stock products, uses answer_scope=all. A short 'show all' after a
 contributors view is applicable and inherits last_metric and last_direction from context.
@@ -158,9 +162,13 @@ Today (Moscow): ''' + str(today) + '\nContext parameters: ' + json.dumps(context
         if not 1 <= (b-a).days+1 <= 365 or b>=today:return None
     except (ValueError,TypeError):
         return None
-    return {**request_context,'is_valid_question':True,'question_type':'simple',
+    selection=parsed.get('selection','store')
+    keys=memory.get('shown_product_keys') or memory.get('product_keys') or []
+    if selection=='shown_products' and not keys:return None
+    return {**request_context,'action':'execute','is_valid_question':True,'question_type':'simple',
         'dataset':'orders' if parsed['metric'] in ('orders_count','orders_amount','cancelled_orders_amount') else 'funnel','metric':parsed['metric'],'analysis':'compare','entity':'product',
-        'scope':'product','answer_scope':parsed.get('answer_scope', 'top'),'view':'contributors','direction':parsed['direction'],
+        'scope':'product' if selection=='shown_products' else 'store',
+        **({'product_keys':list(keys)} if selection=='shown_products' else {}),'answer_scope':parsed.get('answer_scope', 'top'),'view':'contributors','direction':parsed['direction'],
         'period_days':(b-a).days+1,'date_from':str(a),'date_to':str(b),
         'context_dates_inherited':inherited}
 
@@ -277,6 +285,10 @@ def validate_clarification_updates(updates, *, request, memory):
 
 def clarify_request(question, *, draft, memory):
     import json
+    # A semantic planner that already resolved intent and population must not be
+    # reinterpreted by another LLM call. Unresolved drafts still use this gate.
+    if draft.get('action') == 'execute' and draft.get('is_valid_question',True):
+        return draft
     # An explicitly resolved product is already a selection, not a list/store ambiguity.
     if (draft.get('is_valid_question', True) and draft.get('product_key')
             and draft.get('product', {}).get('match_type') not in (None, 'memory')):

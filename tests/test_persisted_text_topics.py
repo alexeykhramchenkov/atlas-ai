@@ -58,7 +58,7 @@ class PersistedTopicsTests(unittest.TestCase):
  def test_annotator_validates_ids_and_reuses_names(self):
   items=[{'source_type':'review','text':'Ткань хорошая','category':'Платья'}]
   topics=[{'topic_id':'a','title':'Ткань','category':'','merged_into':None}]
-  payload={'annotations':[{'item_id':'0','topics':[{'topic_id':None,'new_topic':' ТКАНЬ ',
+  payload={'annotations':[{'item_id':'0','topics':[{'topic_name':' ТКАНЬ ',
     'category':'','summary':'Хорошая ткань','sentiment':'positive'}]}]}
   with patch('ai_chat.analysis.text_annotation.generate_openai_json',return_value=payload):
    self.assertEqual(annotate(items,topics)[0][0]['topic_id'],'a')
@@ -89,7 +89,7 @@ class PersistedTopicsTests(unittest.TestCase):
    self.assertEqual(result['rows_upserted'],1);llm.assert_not_called()
  def test_annotation_unknown_topic_never_persists(self):
   items=[{'source_type':'question','question_text':'Размер?','category':''}]
-  payload={'annotations':[{'item_id':'0','topics':[{'topic_id':'invented','new_topic':None,
+  payload={'annotations':[{'item_id':'0','topics':[{'topic_name':'',
    'category':'','summary':'Размер','sentiment':'neutral'}]}]}
   with patch('ai_chat.analysis.text_annotation.generate_openai_json',return_value=payload):
    with self.assertRaises(ValueError):annotate(items,[])
@@ -106,18 +106,18 @@ class PersistedTopicsTests(unittest.TestCase):
  def test_repeated_fragments_in_same_topic_are_one_aspect(self):
   items=[{'source_type':'review','text':'Ткань мягкая и приятная','category':''}]
   topics=[{'topic_id':'a','title':'Ткань','category':'','merged_into':None}]
-  aspects=[{'topic_id':'a','new_topic':None,'category':'','summary':summary,'sentiment':'positive'} for summary in ['Мягкая','Приятная']]
+  aspects=[{'topic_name':'Ткань','category':'','summary':summary,'sentiment':'positive'} for summary in ['Мягкая','Приятная']]
   with patch('ai_chat.analysis.text_annotation.generate_openai_json',return_value={'annotations':[{'item_id':'0','topics':aspects}]}):
    r=annotate(items,topics)
   self.assertEqual(len(r[0]),1);self.assertEqual(r[0][0]['summary'],'Мягкая; Приятная')
  def test_niche_topic_is_not_available_to_another_category(self):
   items=[{'source_type':'question','question_text':'Есть мой размер?','category':'Платья'}]
   topics=[{'topic_id':'jacket','title':'Наличие куртки','category':'Куртки','merged_into':None}]
-  payload={'annotations':[{'item_id':'0','topics':[{'topic_id':'jacket','new_topic':None,
+  payload={'annotations':[{'item_id':'0','topics':[{'topic_name':'Наличие куртки',
    'category':'Куртки','summary':'Размер','sentiment':'neutral'}]}]}
   with patch('ai_chat.analysis.text_annotation.generate_openai_json',return_value=payload) as llm:
    with self.assertRaises(ValueError):annotate(items,topics)
-   self.assertEqual(llm.call_args.kwargs['schema']['properties']['annotations']['items']['properties']['topics']['items']['properties']['topic_id']['enum'],[None])
+   self.assertNotIn('Наличие куртки',llm.call_args.kwargs['prompt'].split('Тексты:')[0])
  def test_more_than_200_ids_use_independent_queries(self):
   from db.text_analysis_store import load_analyses
   rows=[{**T,'analysis_id':f'a{i:04}','source_type':'review','source_id':f'r{i}',
@@ -127,3 +127,21 @@ class PersistedTopicsTests(unittest.TestCase):
   self.assertEqual(len(loaded),2401)
   for query in db.queries:
    self.assertEqual(sum(k=='source_id' and op=='in' for k,op,v in query.filters),1)
+
+class TopicNameIdentity(unittest.TestCase):
+ def test_name_resolves_to_matching_id_not_dictionary_position(self):
+  items=[{'source_type':'review','text':'Просвечивает','category':'Платья'}]
+  dictionary=[{'topic_id':'camera','title':'Эффективность муляжа','category':'','merged_into':None},
+              {'topic_id':'dress','title':'Прозрачность ткани','category':'','merged_into':None}]
+  payload={'annotations':[{'item_id':'0','topics':[{'topic_name':'Прозрачность ткани','category':'','summary':'Просвечивает','sentiment':'negative'}]}]}
+  with patch('ai_chat.analysis.text_annotation.generate_openai_json',return_value=payload) as llm:
+   result=annotate(items,dictionary)
+  self.assertEqual(result[0][0]['topic_id'],'dress')
+  self.assertNotIn('topic_id',llm.call_args.kwargs['schema']['properties']['annotations']['items']['properties']['topics']['items']['properties'])
+ def test_new_name_stays_new_instead_of_using_unrelated_topic(self):
+  items=[{'source_type':'question','question_text':'Крылья съёмные?','category':'Платья'}]
+  dictionary=[{'topic_id':'camera','title':'Эффективность муляжа','category':'','merged_into':None}]
+  payload={'annotations':[{'item_id':'0','topics':[{'topic_name':'Крепление крыльев','category':'Платья','summary':'Снимаются ли крылья','sentiment':'neutral'}]}]}
+  with patch('ai_chat.analysis.text_annotation.generate_openai_json',return_value=payload):
+   result=annotate(items,dictionary)
+  self.assertIsNone(result[0][0]['topic_id']);self.assertEqual(result[0][0]['new_topic'],'Крепление крыльев')
