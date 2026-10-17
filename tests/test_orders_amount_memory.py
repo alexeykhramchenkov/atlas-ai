@@ -88,3 +88,9 @@ class ZeroAmountDisplay(unittest.TestCase):
   with patch('ai_chat.routing.llm_fallback.generate_openai_json',return_value={'applicable':True,'breakdown':True,'answer_scope':'all','period_days':None}):
    request=resolve_shown_orders('include zeros',memory=memory,request_context={})
   self.assertNotIn('product_keys',request)
+
+class CurrentMetricWins(unittest.TestCase):
+ def test_other_metric_cannot_inherit_revenue_even_if_applicable_is_wrong(self):
+  parsed={'requested_metric':'other','applicable':True,'breakdown':False,'period_days':None}
+  with patch('ai_chat.routing.llm_fallback.generate_openai_json',return_value=parsed):
+   self.assertIsNone(resolve_shown_orders('a different measure for them',memory={'shown_product_keys':['a'],'last_dataset':'orders','last_metric':'orders_amount'},request_context={}))
