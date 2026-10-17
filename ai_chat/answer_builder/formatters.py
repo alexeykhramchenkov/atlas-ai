@@ -14,7 +14,16 @@ def format_value(
             return (options or {}).get("zero_baseline", "—")
         return ("+" if value > 0 else "−" if value < 0 else "") + _format_number(value=abs(value), language=language) + "%"
     if value is None:
-        return "—"
+        return (options or {}).get("missing_text", "—")
+
+    if formatter == "plural":
+        forms = (options or {}).get("forms")
+        if not isinstance(forms, list) or len(forms) != 3:
+            raise ValueError("Plural formatter requires three forms")
+        number = abs(Decimal(str(value)))
+        if number != number.to_integral_value():return forms[1]
+        number = int(number)
+        return forms[0] if number % 10 == 1 and number % 100 != 11 else forms[1] if number % 10 in (2, 3, 4) and number % 100 not in (12, 13, 14) else forms[2]
 
     if formatter == "text":
         return str(value)

@@ -1,0 +1,387 @@
+[
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"funnel\", \"entity\": \"product\", \"metric\": \"carts_without_orders\"}]",
+    "changes": {
+      "title_template": "<b>Корзины без заказов</b>{period_heading}\n\nЗаказов: <b>0</b>\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "carts_without_orders",
+            "dataset": "funnel",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              },
+              {
+                "name": "cart_word",
+                "path": "value",
+                "options": {
+                  "forms": [
+                    "корзина",
+                    "корзины",
+                    "корзин"
+                  ]
+                },
+                "formatter": "plural"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{value}</b> {cart_word}",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"orders\", \"entity\": \"product\", \"metric\": \"cancelled_orders\"}]",
+    "changes": {
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "cancelled_orders",
+            "dataset": "orders",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "rate",
+                "path": "rate_pct",
+                "options": {
+                  "missing_text": "нет заказов"
+                },
+                "formatter": "percent"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{rate}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"sales\", \"entity\": \"product\", \"metric\": \"return_count\"}]",
+    "changes": {
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "return_count",
+            "dataset": "sales",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "rate",
+                "path": "rate_pct",
+                "options": {
+                  "missing_text": "нет выкупов"
+                },
+                "formatter": "percent"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{rate}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"sales\", \"metric\": \"return_count\"}]",
+    "changes": {
+      "title_template": "<b>Чаще возвращают</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "metric": "return_count",
+            "dataset": "sales",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "empty_text": "Возвратов за этот период не зафиксировано.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "rate",
+                "path": "rate_pct",
+                "options": {
+                  "missing_text": "нет выкупов"
+                },
+                "formatter": "percent"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title}: <b>{rate}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"sales\", \"metric\": \"return_count\"}]",
+    "changes": {
+      "title_template": "<b>Реже возвращают</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "return_count",
+            "dataset": "sales",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "empty_text": "Возвратов за этот период не зафиксировано.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "rate",
+                "path": "rate_pct",
+                "options": {
+                  "missing_text": "нет выкупов"
+                },
+                "formatter": "percent"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title}: <b>{rate}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"sales\", \"metric\": \"return_count\"}]",
+    "changes": {
+      "title_template": "<b>Возвраты по товарам</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "return_count",
+            "dataset": "sales",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "empty_text": "Возвратов за этот период не зафиксировано.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "rate",
+                "path": "rate_pct",
+                "options": {
+                  "missing_text": "нет выкупов"
+                },
+                "formatter": "percent"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title}: <b>{rate}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"stocks\", \"entity\": \"product\", \"metric\": \"stock_without_orders\"}]",
+    "changes": {
+      "question_type": "simple",
+      "template_name": "compact_text",
+      "language": "ru",
+      "title_template": "<b>С остатком, но без заказов</b>{period_heading}\n\nЗаказов: <b>0</b>\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "stock_without_orders",
+            "dataset": "stocks",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Товаров с положительным остатком и без заказов за этот период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "qty",
+                "path": "stock_qty",
+                "formatter": "number"
+              },
+              {
+                "name": "orders",
+                "path": "orders_count",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{qty}</b> шт.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.snapshot_date",
+          "label": "stock_date",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ],
+      "priority": 4,
+      "is_active": true
+    }
+  },
+  {
+    "table": "system_metric_ai_bot_rules",
+    "semantic_key": "[\"stocks\", \"stock_without_orders\"]",
+    "changes": {
+      "dataset": "stocks",
+      "metric": "stock_without_orders",
+      "aliases_ru": [
+        "какие с остатком товары не заказывают",
+        "какие товары с остатком не заказывают",
+        "какие товары есть на складе, но их не заказывают",
+        "товары с остатком без заказов"
+      ],
+      "aliases_en": [],
+      "default_entity": "product",
+      "is_active": true,
+      "answer_scope": "top",
+      "default_limit": 5
+    }
+  }
+]

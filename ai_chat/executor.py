@@ -165,7 +165,18 @@ class Executor:
                 from ai_chat.analysis.analysis_type.ranked import group_rows
                 rows=group_rows(rows,{'group_by':'product_key','group_fields':['product_key','title'],
                     'value_field':field,'aggregation':'sum'})
-            if analysis_name in {'best','worst','rank'}:
+            if request.get('product_keys') is not None:
+                from ai_chat.analysis.analysis_type.filter import run as filter_rows
+                rows=filter_rows(rows=rows,conditions=[{'field':'product_key','operator':'in','value':request['product_keys']}])['rows']
+            if dataset_name=='sales' and field=='return_count' and analysis_name=='best':
+                from ai_chat.analysis.analysis_type.filter import run as filter_rows
+                rows=filter_rows(rows=rows,conditions=[{'field':'return_count','operator':'gt','value':0}])['rows']
+                context['meta']={**context.get('meta',{}),'total_groups':len(rows)}
+            if dataset_name=='sales' and field=='return_count' and analysis_name in {'best','worst','rank'}:
+                from ai_chat.analysis.ratios import ratio_percent,rank_rates
+                rows=[{**row,'rate_pct':ratio_percent(row['return_count'],row.get('sales_count'))} for row in rows]
+                rows=rank_rates(rows,direction=request.get('direction') or ('asc' if analysis_name=='worst' else 'desc'),limit=int(request.get('limit',1)))
+            elif analysis_name in {'best','worst','rank'}:
                 rows=rank(rows=rows,metric=field,direction=request.get('direction') or ('asc' if analysis_name=='worst' else 'desc'),limit=int(request.get('limit',1)))['rows']
             context['rows']=[{**row,**({'value':row[field]} if field in row else {})} for row in rows]
             if field in facts:context['value']=facts[field]

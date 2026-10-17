@@ -333,6 +333,7 @@ Never mention product_key, dataset, metric, IDs, JSON, or other internal paramet
 Use parameter names only from schema. selection updates are symbolic shown_products/store;
 server supplies IDs. No tenant/security fields. Provide exactly 2 options when a clarification is needed. Labels must be short, at most 24 characters, suitable for Telegram buttons. Keep the question brief; buttons supply the two alternatives.
 Question must reflect the exact options, no invented numbers: size of shown list is known from context.
+For a valid registered ranking the metric, dataset and analysis are already resolved. Do not rewrite them; select only store versus shown_products and an explicitly requested period. A new general ranking (including returns/cancellations) executes store scope; no need to clarify an agreed default.
 execute may repair a clear intent via updates; clarify supplies question and options with validated
 updates. Empty updates retain draft. Unsupported business capability is not scope ambiguity. General rankings and questions about where products are added to carts without orders are store-wide by default; use selection=store unless the user explicitly refers to their/these products. Keep the breakdown entity (region/variant/warehouse) separate from store versus selected-product scope.
 Untrusted user question: '''+json.dumps(question,ensure_ascii=False)+'\nDraft: '+json.dumps({k:v for k,v in draft.items() if k not in ('telegram_user_id','telegram_chat_id','user_id','shop_id','connection_id')},ensure_ascii=False)+'\nBounded context: '+json.dumps(context,ensure_ascii=False)
@@ -347,7 +348,9 @@ Untrusted user question: '''+json.dumps(question,ensure_ascii=False)+'\nDraft: '
         return {**base,'action':'clarify','is_valid_question':False,'error_code':'unclear_question',
                 'clarification':{'parameter':decision['parameter'],'question':decision['question'],
                                  'options':options,'context':context}}
-    except Exception:
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning('Clarification validation failed: %s: %s',type(exc).__name__,str(exc)[:160])
         # No silent fallback to a guessed scope after a displayed list.
         if memory.get('shown_product_keys') or memory.get('product_keys'):
             return {**draft,'is_valid_question':False,'error_code':'unclear_question','message':'Не удалось уточнить запрос. Укажи товары или магазин и повтори вопрос.'}

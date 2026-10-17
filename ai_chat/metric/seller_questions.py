@@ -51,6 +51,15 @@ def run(request,supabase):
     days=(date.fromisoformat(end)-date.fromisoformat(start)).days+1
     previous_end=(date.fromisoformat(start)-timedelta(days=1)).isoformat()
     previous_start=(date.fromisoformat(start)-timedelta(days=days)).isoformat()
+    if metric=='stock_without_orders':
+        from ai_chat.internal_tools.get_orders import get_orders,IncompleteOrdersError
+        from ai_chat.internal_tools.get_stocks import get_stocks
+        common={k:request[k] for k in ('user_id','shop_id','marketplace')}
+        try:order_facts=get_orders(**common,start_date=start,end_date=end,supabase=supabase)
+        except IncompleteOrdersError:
+            return {**{k:request[k] for k in ('dataset','analysis','metric','entity','date_from','date_to')},'period_days':days,'status':'incomplete','rows':[]}
+        stock_facts=get_stocks(**common,supabase=supabase)
+        return calculate(request,{'products':stock_facts['products'],'order_facts':order_facts,'stock_facts':stock_facts})
     read=lambda source,a=start,b=end,**kw:get_seller_facts(supabase,request,source,a,b,**kw)
     facts={'products':read('products')}
     if metric in ORDER_METRICS|STOCK_METRICS|{'price_change_orders'}:
@@ -97,11 +106,22 @@ def calculate(request,facts):
     products={r['product_key']:r for r in facts.get('products',[])}
     def period(rows,a=start,b=end):return [r for r in rows if a<=str(r.get('snapshot_date') or '')[:10]<=b]
     def missing(reason):return {**result,'status':'incomplete','meta':{'reason':reason}}
-    def finish(rows,reverse=True):
-        rows=sorted(rows,key=lambda r:(-n(r.get('value')) if reverse else n(r.get('value')),str(r.get('product_key') or r.get('title') or '')))
+    def finish(rows,reverse=True,field='value'):
+        rows=sorted(rows,key=lambda r:(r.get(field) is None,-n(r.get(field)) if reverse else n(r.get(field)),str(r.get('product_key') or r.get('title') or '')))
         result['meta'].update(total_groups=len(rows),limit=request.get('limit',5))
         result['rows']=[{'title':r.get('product_key') or 'Название не указано',**products.get(r.get('product_key'),{}),**r} for r in rows[:request.get('limit',5)]]
         return result
+    if metric=='stock_without_orders':
+        from ai_chat.analysis.analysis_type.filter import run as filter_rows
+        orders={r['product_key']:r['orders_count'] for r in facts['order_facts']['products']}
+        prepared=[{**r,'stock_qty':r['total_quantity'],'value':r['total_quantity'],
+                   'orders_count':orders.get(r['product_key'],0)} for r in facts['stock_facts']['products']]
+        conditions=[{'field':'total_quantity','operator':'gt','value':0},{'field':'orders_count','operator':'eq','value':0}]
+        if request.get('product_key'):conditions.append({'field':'product_key','operator':'eq','value':request['product_key']})
+        if request.get('product_keys') is not None:conditions.append({'field':'product_key','operator':'in','value':request['product_keys']})
+        selected=filter_rows(rows=prepared,conditions=conditions)['rows']
+        result['meta']['snapshot_date']=facts['stock_facts']['as_of']
+        return finish(selected)
     if metric in ORDER_METRICS|STOCK_METRICS:
         if not covered(facts.get('orders',[]),previous_start if metric in COMPARISONS else start,end):return missing('orders_coverage')
         orders=group(period(facts['orders']),['orders_count','cancelled_orders_count'])
@@ -121,7 +141,9 @@ def calculate(request,facts):
                         'meta':{'previous_date_from':previous_start,'previous_date_to':previous_end}}
             return finish([r for r in rows if r['value']>0] if metric=='orders_growth' else [r for r in rows if r['value']<0],metric=='orders_growth')
         if metric=='zero_orders':return finish([{'product_key':pk,'value':0} for pk in products if not orders.get(pk,{}).get('orders_count')])
-        if metric=='cancelled_orders':return finish([{'product_key':pk,'value':r['cancelled_orders_count'],'orders_count':r['orders_count']} for pk,r in orders.items() if r['cancelled_orders_count']>0])
+        if metric=='cancelled_orders':
+            from ai_chat.analysis.ratios import ratio_percent
+            return finish([{'product_key':pk,'value':r['cancelled_orders_count'],'cancelled_orders_count':r['cancelled_orders_count'],'orders_count':r['orders_count'],'rate_pct':ratio_percent(r['cancelled_orders_count'],r['orders_count'])} for pk,r in orders.items() if r['cancelled_orders_count']>0],field='rate_pct')
         if metric=='regions_store':
             seen=set();counts=Counter();cancel=Counter()
             for r in facts.get('order_events',[]):
@@ -214,7 +236,8 @@ def calculate(request,facts):
         source=facts.get('returns',[])
         if not isinstance(source,dict) and not load_covered(facts.get('loads',[]),start,end):return missing('sales_coverage')
         rows=group(source['products'] if isinstance(source,dict) else source,['sales_count','return_count'])
-        return finish([{'product_key':pk,'value':r['return_count']} for pk,r in rows.items() if r['return_count']>0])
+        from ai_chat.analysis.ratios import ratio_percent
+        return finish([{'product_key':pk,'value':r['return_count'],'return_count':r['return_count'],'sales_count':r['sales_count'],'rate_pct':ratio_percent(r['return_count'],r['sales_count'])} for pk,r in rows.items() if r['return_count']>0],field='rate_pct')
     if metric=='wb_expenses':
         source=facts.get('expenses',[])
         if isinstance(source,dict):

@@ -1,0 +1,137 @@
+[
+  {
+    "number": 1,
+    "question": "Сколько заказов сегодня?",
+    "metric": "orders_today"
+  },
+  {
+    "number": 2,
+    "question": "Заказов стало больше или меньше, чем на прошлой неделе?",
+    "metric": "orders_week_change"
+  },
+  {
+    "number": 3,
+    "question": "Какие товары стали заказывать чаще?",
+    "metric": "orders_growth"
+  },
+  {
+    "number": 4,
+    "question": "У каких товаров сильнее всего упали заказы?",
+    "metric": "orders_decline"
+  },
+  {
+    "number": 5,
+    "question": "Какие товары вообще не заказывали за месяц?",
+    "metric": "zero_orders"
+  },
+  {
+    "number": 6,
+    "question": "Какие товары пора пополнить?",
+    "metric": "replenishment_risk"
+  },
+  {
+    "number": 7,
+    "question": "На сколько дней хватит остатков этого товара?",
+    "metric": "stock_days"
+  },
+  {
+    "number": 8,
+    "question": "Какие размеры скоро закончатся?",
+    "metric": "size_stock_days"
+  },
+  {
+    "number": 9,
+    "question": "Сколько штук нужно довезти на ближайшие две недели?",
+    "metric": "replenishment_qty"
+  },
+  {
+    "number": 32,
+    "question": "Какие товары с остатком не заказывают?",
+    "metric": "stock_without_orders"
+  },
+  {
+    "number": 10,
+    "question": "Какие товары лежат на складе и почти не продаются?",
+    "metric": "stagnant_stock"
+  },
+  {
+    "number": 14,
+    "question": "Сколько маркетплейс удержал за комиссии, доставку и хранение?",
+    "metric": "wb_expenses"
+  },
+  {
+    "number": 16,
+    "question": "Сколько потратили на рекламу за неделю?",
+    "metric": "ads_spend"
+  },
+  {
+    "number": 17,
+    "question": "Какие товары получили заказы из рекламы?",
+    "metric": "ads_orders"
+  },
+  {
+    "number": 18,
+    "question": "На какие товары тратим рекламу, но заказов нет?",
+    "metric": "ads_without_orders"
+  },
+  {
+    "number": 19,
+    "question": "Сколько стоит один заказ из рекламы?",
+    "metric": "ads_cpo"
+  },
+  {
+    "number": 20,
+    "question": "Какие рекламные кампании стали работать хуже?",
+    "metric": "ads_decline"
+  },
+  {
+    "number": 21,
+    "question": "Какие товары смотрят, но не заказывают?",
+    "metric": "views_without_orders"
+  },
+  {
+    "number": 31,
+    "question": "Какие товары смотрят, но не добавляют в корзину?",
+    "metric": "views_without_carts"
+  },
+  {
+    "number": 22,
+    "question": "Какие товары добавляют в корзину, но не оформляют заказ?",
+    "metric": "carts_without_orders"
+  },
+  {
+    "number": 23,
+    "question": "У каких товаров упала конверсия?",
+    "metric": "conversion_decline"
+  },
+  {
+    "number": 25,
+    "question": "Что изменилось в заказах после изменения цены?",
+    "metric": "price_change_orders"
+  },
+  {
+    "number": 26,
+    "question": "Какой процент заказанных товаров выкупают?",
+    "metric": "buyout_rate"
+  },
+  {
+    "number": 27,
+    "question": "Какие товары чаще отменяют?",
+    "metric": "cancelled_orders"
+  },
+  {
+    "number": 28,
+    "question": "Какие товары чаще возвращают?",
+    "metric": "return_count"
+  },
+  {
+    "number": 29,
+    "question": "На что покупатели чаще всего жалуются в отзывах?",
+    "metric": "review_complaints"
+  },
+  {
+    "number": 30,
+    "question": "Какой регион даёт больше всего заказов по всему магазину?",
+    "metric": "regions_store"
+  }
+]

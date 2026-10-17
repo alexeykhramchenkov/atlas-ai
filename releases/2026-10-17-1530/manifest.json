@@ -1,0 +1,41 @@
+{
+  "release": "2026-10-17-1530",
+  "previous_production_commit": "5efa352",
+  "test_snapshot": [
+    {
+      "path": "ai_chat/executor.py",
+      "test_sha256": "7e1d428a3954b5e5933041d9a84ad218a7ce61ddcc24c2d460b8b32fb2d192e4",
+      "test_mtime": 1792221482.3855104
+    },
+    {
+      "path": "ai_chat/answer_builder/formatters.py",
+      "test_sha256": "2c0e1265267af1fc66693466df20f6f4b57fb36d22cf91c9af38eae3c02ae70f",
+      "test_mtime": 1792221460.5290542
+    },
+    {
+      "path": "ai_chat/analysis/ratios.py",
+      "test_sha256": "c019ba3a303a65cb2dbe2a4e6840f3c18538fed32888980203c6d17b35a1974d",
+      "test_mtime": 1792221460.4541292
+    },
+    {
+      "path": "ai_chat/routing/llm_fallback.py",
+      "test_sha256": "05c665750de58cddf4bd35759b2c67da5a2dfd8391a400015ae2ff2883478b37",
+      "test_mtime": 1792220931.7718241
+    },
+    {
+      "path": "ai_chat/routing/seller_questions.py",
+      "test_sha256": "db45136ba7dfb8cc18b9a425f34609b067ea8c34427f30505f1ef3d49d1724d0",
+      "test_mtime": 1792220931.7660627
+    },
+    {
+      "path": "ai_chat/metric/seller_questions.py",
+      "test_sha256": "e813b9546c082a9cfb06a4f185b9124db4f3f1da75187700f42578b758b8ee0e",
+      "test_mtime": 1792221460.526734
+    }
+  ],
+  "tests_passed": 335,
+  "rule_rows": 8,
+  "get_contracts_changed": false,
+  "fact_data_copied": false,
+  "dialogue_planner_enabled": false
+}

@@ -14,6 +14,7 @@ QUESTIONS = [
  (7,'На сколько дней хватит остатков этого товара?','stock_days','stocks','metric_value','product',7),
  (8,'Какие размеры скоро закончатся?','size_stock_days','stocks','worst','variant',7),
  (9,'Сколько штук нужно довезти на ближайшие две недели?','replenishment_qty','stocks','best','product',7),
+ (32,'Какие товары с остатком не заказывают?','stock_without_orders','stocks','worst','product',7),
  (10,'Какие товары лежат на складе и почти не продаются?','stagnant_stock','stocks','worst','product',30),
  (14,'Сколько маркетплейс удержал за комиссии, доставку и хранение?','wb_expenses','realization','metric_value','store',30),
  (16,'Сколько потратили на рекламу за неделю?','ads_spend','ads','metric_value','store',7),
