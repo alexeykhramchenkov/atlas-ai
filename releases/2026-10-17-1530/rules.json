@@ -383,5 +383,88 @@
       "answer_scope": "top",
       "default_limit": 5
     }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "production_id": null,
+    "changes": {
+      "question_type": "simple",
+      "template_name": "compact_text",
+      "language": "ru",
+      "title_template": "<b>Заканчивающиеся размеры</b> · {period_duration}\n{period}\n\n{items}\n\nПроверено: {checked} размеров",
+      "fields": [
+        {
+          "match": {
+            "metric": "days_left",
+            "dataset": "stocks",
+            "analysis": "rank",
+            "is_valid_question": true,
+            "entity": "variant"
+          }
+        },
+        {
+          "path": "as_of",
+          "label": "asof",
+          "formatter": "date"
+        },
+        {
+          "path": "checked_products",
+          "label": "checked",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Размеров с запасом до 14 дней не найдено.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "qty",
+                    "path": "warehouse_quantity",
+                    "formatter": "qty"
+                  },
+                  {
+                    "name": "days",
+                    "path": "days_left",
+                    "options": {
+                      "decimals": 0
+                    },
+                    "formatter": "days"
+                  },
+                  {
+                    "name": "size",
+                    "path": "size_name",
+                    "formatter": "html_text"
+                  }
+                ],
+                "item_template": "• {title} · размер {size}: <b>{days}</b>"
+              }
+            ],
+            "status_text": {
+              "no_data": "Остатки не найдены.",
+              "incomplete": "Для прогноза пока недостаточно данных по заказам."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ],
+      "priority": -11,
+      "is_active": true
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "production_id": 19,
+    "changes": {
+      "priority": -12
+    }
   }
 ]

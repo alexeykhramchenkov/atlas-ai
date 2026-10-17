@@ -1,0 +1,33 @@
+{
+  "runtime_commit": "f02115e",
+  "automated_tests": 342,
+  "catalogue_questions": 27,
+  "additional_questions": 20,
+  "all_catalogue_answers_delivered": true,
+  "telegram_journal_range": [
+    277,
+    333
+  ],
+  "checks": [
+    "Cancellation and return percentages match their denominators",
+    "View growth/decline and cart growth are sorted correctly",
+    "Funnel lists use the 80 percent stock subset; store stocks retain all 833 units",
+    "Displayed rows and bounded selection survive metric changes and empty replenishment",
+    "Angel product and 30-day period survive the variant followup",
+    "Negative, positive and buyer question topics use all loaded texts by default",
+    "Unanswered review list has text, newest first, current assortment",
+    "New buyer questions mean unanswered questions",
+    "Final cart decline uses cart_count and ascending percentages",
+    "Price followup retains the single product and reports missing history"
+  ],
+  "expected_data_limits": [
+    "Today orders coverage incomplete with daily ingestion",
+    "No current advertising data",
+    "No price change history in requested period"
+  ],
+  "observed_source_limits": [
+    "Four stock product keys have no product title in the current catalog"
+  ],
+  "get_contracts_changed": false,
+  "fact_data_copied": false
+}

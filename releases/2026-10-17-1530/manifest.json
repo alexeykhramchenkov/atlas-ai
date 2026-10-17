@@ -33,9 +33,16 @@
       "test_mtime": 1792221460.526734
     }
   ],
-  "tests_passed": 335,
-  "rule_rows": 8,
+  "tests_passed": 342,
+  "rule_rows": 10,
   "get_contracts_changed": false,
   "fact_data_copied": false,
-  "dialogue_planner_enabled": false
+  "dialogue_planner_enabled": false,
+  "forecast_policy": {
+    "demand_days": 30,
+    "stock": "warehouse_quantity",
+    "threshold_days": 14
+  },
+  "acceptance": "verified",
+  "runtime_commit": "f02115e"
 }
