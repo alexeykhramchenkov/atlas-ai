@@ -41,3 +41,11 @@ class OrdersChangeTests(unittest.TestCase):
    self.assertEqual([x['product_key'] for x in r['rows']],expected)
    self.assertEqual(r['rows'][0]['current'],0)
    self.assertEqual(r['comparison']['orders_amount']['change_abs'],-1000)
+
+class StandaloneFunnelChange(unittest.TestCase):
+ def test_current_metric_does_not_require_funnel_in_previous_turn(self):
+  from ai_chat.routing.llm_fallback import resolve_funnel_change
+  parsed=dict(applicable=True,metric='open_count',direction='negative',answer_scope='top',period_days=7,start_date=None,end_date=None)
+  with patch('ai_chat.routing.llm_fallback.generate_openai_json',return_value=parsed):
+   r=resolve_funnel_change('У каких товаров упали просмотры',memory={'last_dataset':'stocks'},request_context={})
+  self.assertEqual((r['dataset'],r['metric'],r['direction']),('funnel','open_count','negative'))

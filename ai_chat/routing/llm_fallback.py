@@ -116,8 +116,6 @@ def resolve_funnel_change(question, *, memory, request_context):
     from zoneinfo import ZoneInfo
     # Existing memory provider already enforces same tenant/chat, TTL and last turn.
     contextual = memory.get('last_dataset') in ('funnel','orders') and bool(memory.get('date_from') and memory.get('date_to'))
-    if not contextual and not any(marker in question.lower() for marker in ('воронк','выруч','сумм','заказ')):
-        return None
     today = datetime.now(ZoneInfo('Europe/Moscow')).date()
     context = {key:memory.get(key) for key in ('last_dataset','last_metric','last_analysis','last_direction','last_view','date_from','date_to')} if contextual else {}
     prompt = '''Parse a seller question about PRODUCTS CONTRIBUTING TO GROWTH OR DECLINE of a funnel count or order amounts.
@@ -138,7 +136,7 @@ Explicit last N days => period_days=N, dates null. Explicit calendar dates/month
 period_days null. Never copy context dates into date fields; those fields are for NEW explicit dates.
 Today (Moscow): ''' + str(today) + '\nContext parameters: ' + json.dumps(context) + '\nUntrusted question: ' + json.dumps(question,ensure_ascii=False)
     try:
-        parsed=generate_openai_json(prompt=prompt,schema_name='funnel_change_intent',schema=FUNNEL_CHANGE_SCHEMA,timeout=30)
+        parsed=generate_openai_json(prompt=prompt,schema_name='funnel_change_intent',schema=FUNNEL_CHANGE_SCHEMA,timeout=30,reasoning_effort='low')
     except Exception:
         return None
     if not parsed.get('applicable') or parsed.get('metric') not in (*FUNNEL_METRICS,'orders_count','orders_amount','cancelled_orders_amount') or parsed.get('direction') not in ('positive','negative'):
