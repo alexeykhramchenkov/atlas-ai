@@ -153,7 +153,12 @@ def _route_request(
     from ai_chat.routing.seller_questions import resolve_seller_question, BY_METRIC
     def registered_seller(q):
         try:
-            return next((m.metric for m in resolve_metrics(question=q,supabase=supabase) if m.metric in BY_METRIC),None)
+            from ai_chat.routing.metrics import normalize_text
+            # A fuzzy phrase resemblance is not a resolved business capability.
+            # Let the constrained semantic planner handle that case instead.
+            return next((m.metric for m in resolve_metrics(question=q,supabase=supabase)
+                         if m.metric in BY_METRIC and m.matched_alias
+                         and normalize_text(m.matched_alias) in normalize_text(q)),None)
         except Exception:
             return None
     seller_request = resolve_seller_question(question, memory, request_context,

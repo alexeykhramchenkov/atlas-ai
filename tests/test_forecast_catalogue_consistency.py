@@ -43,3 +43,10 @@ class ForecastCatalogueTests(unittest.TestCase):
   q=next(x[1] for x in QUESTIONS if x[2]=='price_change_orders')
   r=resolve_seller_question(q,{}, {},resolve_explicit=lambda _:None,resolve_reference=lambda text,_:{'product_key':'a','match_type':'memory'} if text=='этот товар' else None)
   self.assertTrue(r['is_valid_question']);self.assertEqual(r['product_key'],'a')
+
+ def test_single_resolved_product_does_not_need_a_second_scope_decision(self):
+  from ai_chat.routing.llm_fallback import clarify_request
+  draft={'is_valid_question':True,'dataset':'prices','metric':'price_change_orders','analysis':'metric_value','entity':'product','product_key':'a','product':{'match_type':'memory'}}
+  with patch('ai_chat.routing.llm_fallback.generate_openai_json',side_effect=AssertionError('Already resolved')):
+   r=clarify_request('What changed after the price change?',draft=draft,memory={'shown_product_keys':['a'],'last_product_key':'a'})
+  self.assertEqual(r['action'],'execute');self.assertEqual(r['product_key'],'a')

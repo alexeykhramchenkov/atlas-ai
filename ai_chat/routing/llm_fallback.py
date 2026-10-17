@@ -302,6 +302,12 @@ def clarify_request(question, *, draft, memory):
     if (draft.get('is_valid_question', True) and draft.get('product_key')
             and draft.get('product', {}).get('match_type') not in (None, 'memory')):
         return {**draft,'action':'execute'}
+    # A resolved reference to the sole current product is not a scope choice.
+    selected=memory.get('shown_product_keys') or memory.get('product_keys') or [memory.get('last_product_key')]
+    if (draft.get('is_valid_question',True) and draft.get('product_key')
+            and draft['product_key']==memory.get('last_product_key')
+            and set(selected)=={draft['product_key']}):
+        return {**draft,'action':'execute'}
     # A bounded selection already resolved from the last shown list is not ambiguous.
     if (draft.get('is_valid_question', True) and draft.get('product_keys')
             and draft['product_keys'] == (memory.get('shown_product_keys') or memory.get('product_keys'))):
