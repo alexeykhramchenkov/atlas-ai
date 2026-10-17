@@ -145,3 +145,12 @@ class TopicNameIdentity(unittest.TestCase):
   with patch('ai_chat.analysis.text_annotation.generate_openai_json',return_value=payload):
    result=annotate(items,dictionary)
   self.assertIsNone(result[0][0]['topic_id']);self.assertEqual(result[0][0]['new_topic'],'Крепление крыльев')
+
+class SameNamedTopics(unittest.TestCase):
+ def test_shared_and_category_topic_names_count_distinct_sources_once(self):
+  def row(source,ids):
+   return {'feedback_id':source,'topic_analysis':{'status':'ready','topics':[
+    {'topic_id':i,'title':' Размер/посадка ' if i=='generic' else 'размер/посадка','summary':'Мало','sentiment':'negative'} for i in ids]}}
+  r=summarize([row('r1',['generic','category']),row('r2',['category'])],source_type='review',sentiment='negative')
+  self.assertEqual(len(r['rows']),1);self.assertEqual(r['rows'][0]['reviews_count'],2)
+  self.assertEqual(r['rows'][0]['feedback_ids'],['r1','r2'])

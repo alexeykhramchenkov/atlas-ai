@@ -1,5 +1,6 @@
 """Count saved, current annotations. No DB calls or LLM in the request path."""
 from ai_chat.analysis.analysis_type.rank import run as rank
+from core.text_analysis import normalize_topic
 
 
 def summarize(rows, *, source_type, sentiment=None):
@@ -13,7 +14,7 @@ def summarize(rows, *, source_type, sentiment=None):
         if analysis['status']!='ready':continue
         for aspect in analysis['topics']:
             if sentiment is not None and aspect['sentiment']!=sentiment:continue
-            topic=grouped.setdefault(aspect['topic_id'],{'topic_id':aspect['topic_id'],
+            topic=grouped.setdefault(normalize_topic(aspect['title']),{'topic_id':aspect['topic_id'],
                 'topic':aspect['title'],'ids':set()})
             topic['ids'].add(row[key]);matched.add(row[key])
     prepared=[{'topic_id':r['topic_id'],'topic':r['topic'],count_field:len(r['ids']),
