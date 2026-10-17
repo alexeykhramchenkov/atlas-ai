@@ -109,34 +109,6 @@ def build_snapshot_row(row: Dict[str, Any], snapshot_date: str) -> Dict[str, Any
     }
 
 
-def chunked(items: List[Dict[str, Any]], size: int) -> List[List[Dict[str, Any]]]:
-    return [items[index:index + size] for index in range(0, len(items), size)]
-
-
-def upsert_snapshots(rows: List[Dict[str, Any]]) -> int:
-    if not rows:
-        print("Nothing to upsert")
-        return 0
-
-    sent = 0
-
-    for batch in chunked(rows, BATCH_SIZE):
-        (
-            supabase
-            .table(TARGET_TABLE)
-            .upsert(
-                batch,
-                on_conflict="user_id,shop_id,marketplace,product_key,variant_key,warehouse_key,snapshot_date",
-            )
-            .execute()
-        )
-
-        sent += len(batch)
-        print(f"Sent batch: {sent}/{len(rows)}")
-
-    return sent
-
-
 def run_snapshot_job(
     job: Dict[str, Any],
     state: Optional[Dict[str, Any]],
@@ -147,21 +119,17 @@ def run_snapshot_job(
     snapshot_date = job.get("date_to") or job.get("date_from") or date.today().isoformat()
 
     print("Fetching normalized stocks...")
-    normalized_stocks = fetch_normalized_stocks(user_id=user_id, shop_id=shop_id, marketplace=marketplace)
+    from db.stock_state import load_raw_snapshot, replace_stock_rows
+    from normalized.normalized_wb_stocks import build_complete_stock_rows
+    _, raw_rows = load_raw_snapshot(supabase, user_id, shop_id, marketplace, snapshot_date)
+    normalized_stocks = build_complete_stock_rows(raw_rows)
     print(f"Normalized stocks fetched: {len(normalized_stocks)}")
 
     snapshots = [build_snapshot_row(row, snapshot_date) for row in normalized_stocks]
     print(f"Stock variant snapshots prepared: {len(snapshots)}")
 
-    if not snapshots:
-        print("No stock variant snapshots to upsert")
-        return {
-            "rows_read": len(normalized_stocks),
-            "rows_upserted": 0,
-            "last_processed_date": snapshot_date,
-        }
-
-    sent = upsert_snapshots(snapshots)
+    sent = replace_stock_rows(supabase, TARGET_TABLE, snapshots, user_id=user_id,
+                              shop_id=shop_id, marketplace=marketplace, snapshot_date=snapshot_date)
 
     print("Done")
     print(f"Rows sent to {TARGET_TABLE}: {sent}")

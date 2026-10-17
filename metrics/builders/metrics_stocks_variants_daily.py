@@ -261,28 +261,17 @@ def chunked(items: List[Dict[str, Any]], size: int) -> List[List[Dict[str, Any]]
     return [items[index:index + size] for index in range(0, len(items), size)]
 
 
-def upsert_metrics(rows: List[Dict[str, Any]]) -> int:
-    if not rows:
-        print("Nothing to upsert")
-        return 0
-
-    sent = 0
-
-    for batch in chunked(rows, BATCH_SIZE):
-        (
-            supabase
-            .table(TARGET_TABLE)
-            .upsert(
-                batch,
-                on_conflict="user_id,shop_id,marketplace,product_key,variant_key,warehouse_key,snapshot_date",
-            )
-            .execute()
-        )
-
-        sent += len(batch)
-        print(f"Sent batch: {sent}/{len(rows)}")
-
-    return sent
+def upsert_metrics(rows):
+    # Legacy direct callers also replace complete tenant/date groups.
+    from db.stock_state import replace_stock_metric_dates
+    scopes = {(r['user_id'], r['shop_id'], r['marketplace']) for r in rows}
+    count = 0
+    for user_id, shop_id, marketplace in scopes:
+        selected = [r for r in rows if (r['user_id'], r['shop_id'], r['marketplace']) == (user_id, shop_id, marketplace)]
+        dates = sorted({str(r['snapshot_date'])[:10] for r in selected})
+        count += replace_stock_metric_dates(supabase, TARGET_TABLE, selected, dates,
+            user_id=user_id, shop_id=shop_id, marketplace=marketplace)
+    return count
 
 
 def run_metric_job(job, state, registry_entry) -> Dict[str, Any]:
@@ -308,6 +297,10 @@ def run_metric_job(job, state, registry_entry) -> Dict[str, Any]:
         marketplace=marketplace,
         repair_days=REPAIR_DAYS, user_id=user_id, shop_id=shop_id,
     )
+    # Include a confirmed empty source date too, so obsolete metric rows are cleared.
+    from db.stock_state import load_raw_snapshot
+    source_date, _ = load_raw_snapshot(supabase, user_id, shop_id, marketplace)
+    dates_to_build = sorted(set(dates_to_build) | {date.fromisoformat(source_date)})
     print_dates_to_build(dates_to_build)
 
     if not dates_to_build:
@@ -335,7 +328,9 @@ def run_metric_job(job, state, registry_entry) -> Dict[str, Any]:
     metrics = build_metrics(snapshots, dates_to_build)
     print(f"Stock variant metrics prepared: {len(metrics)}")
 
-    rows_upserted = upsert_metrics(metrics)
+    from db.stock_state import replace_stock_metric_dates
+    rows_upserted = replace_stock_metric_dates(supabase, TARGET_TABLE, metrics, dates_to_build,
+        user_id=user_id, shop_id=shop_id, marketplace=marketplace)
     last_processed_date = max(dates_to_build).isoformat() if dates_to_build else None
 
     return {

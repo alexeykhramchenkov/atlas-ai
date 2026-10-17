@@ -1,0 +1,18 @@
+{
+  "release": "2026-10-17-stock-repair",
+  "previous_release": "atlas-prod-2026-10-17-1530-r1",
+  "problem": "Current unified WB warehouse was added to obsolete individual warehouse state",
+  "changes": [
+    "Normalize one complete latest RAW stock snapshot, replacing the tenant current state atomically",
+    "Build dated stock snapshots from their exact RAW date, not all accumulated normalized rows",
+    "Replace complete stock snapshot and metric date groups; remove disappeared identities",
+    "Handle confirmed empty snapshots and reject malformed input",
+    "Use source snapshot date for latest-stock availability to prevent stale fallback",
+    "Preserve get_stocks parameters and response fields"
+  ],
+  "migration": "sql/20261017_replace_stock_snapshot_rows.sql",
+  "automated_tests": 353,
+  "database_rollback_probes": 6,
+  "get_contracts_changed": false,
+  "status": "prepared"
+}

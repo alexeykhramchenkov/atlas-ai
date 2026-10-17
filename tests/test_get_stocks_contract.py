@@ -17,7 +17,7 @@ class StockContract(unittest.TestCase):
         a={**t,'id':1,'product_key':'a','snapshot_date':'2026-10-14','total_quantity':56,'total_in_way_to_client':7,'total_in_way_from_client':8}
         b={**a,'id':2,'product_key':'b','total_quantity':100,'total_in_way_to_client':0,'total_in_way_from_client':0}
         c={**a,'id':3,'product_key':'c','snapshot_date':'2026-10-13'}
-        return StockDB({'metrics_stocks_daily':[a,b,c,{**a,'id':4,'user_id':2,'snapshot_date':'2026-10-15','total_quantity':999}],
+        return StockDB({'raw_wb_stocks':[{**t,'id':1,'snapshot_date':'2026-10-14'},{**t,'id':2,'user_id':2,'snapshot_date':'2026-10-15'}], 'metrics_stocks_daily':[a,b,c,{**a,'id':4,'user_id':2,'snapshot_date':'2026-10-15','total_quantity':999}],
             'normalized_products':[{**t,'id':1,'product_key':'a','title':'A'},{**t,'id':2,'product_key':'b','title':'B'},
                                    {**t,'id':3,'user_id':2,'product_key':'a','title':'Wrong'}],
             'snapshots_stocks_variants_daily':[{**t,'id':1,'snapshot_date':'2026-10-14','product_key':'a',

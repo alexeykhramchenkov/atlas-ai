@@ -31,7 +31,9 @@ def get_stocks(user_id, shop_id, marketplace="wb", product_key=None,
                 .eq("shop_id",shop_id).eq("marketplace",marketplace))
     # Use one store snapshot, never an older date selected separately per product.
     if as_of is None:
-        latest = query(table,"snapshot_date").order("snapshot_date",desc=True).limit(1).execute().data or []
+        # A confirmed empty/new source must not resurrect an older positive snapshot.
+        latest_table = 'raw_wb_stocks' if marketplace == 'wb' else table
+        latest = query(latest_table,"snapshot_date").order("snapshot_date",desc=True).limit(1).execute().data or []
         if not latest:
             raise StockDataUnavailableError()
         as_of = str(latest[0]["snapshot_date"])[:10]

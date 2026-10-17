@@ -237,96 +237,43 @@ def fetch_raw_stocks(
     return rows
 
 
-def chunked(items: List[Dict[str, Any]], size: int) -> List[List[Dict[str, Any]]]:
-    return [items[index:index + size] for index in range(0, len(items), size)]
-
-
-def upsert_rows(rows: List[Dict[str, Any]]) -> int:
-    if not rows:
-        print("Nothing to upsert")
-        return 0
-
-    sent = 0
-
-    for batch in chunked(rows, BATCH_SIZE):
-        (
-            supabase
-            .table(TARGET_TABLE)
-            .upsert(
-                batch,
-                on_conflict="user_id,shop_id,marketplace,product_key,variant_key,warehouse_key",
-            )
-            .execute()
-        )
-
-        sent += len(batch)
-        print(f"Sent batch: {sent}/{len(rows)}")
-
-    return sent
-
-
-def run_normalization_job(
-    job: Dict[str, Any],
-    state: Optional[Dict[str, Any]] = None,
-    registry_entry: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    user_id = int(job["user_id"])
-    shop_id = int(job["shop_id"])
-
-    last_raw_updated_at, last_raw_id = get_watermark(state)
-
-    raw_rows = fetch_raw_stocks(
-        user_id=user_id,
-        shop_id=shop_id,
-        last_raw_updated_at=last_raw_updated_at,
-        last_raw_id=last_raw_id,
-        batch_size=1000,
-    )
-
+def build_complete_stock_rows(raw_rows):
     if not raw_rows:
-        return {
-            "rows_read": 0,
-            "rows_upserted": 0,
-            "last_raw_updated_at": last_raw_updated_at,
-            "last_raw_id": last_raw_id,
-        }
-
-    stocks_by_key: Dict[tuple, Dict[str, Any]] = {}
-
+        raise ValueError('Missing complete stock source')
+    stocks = {}
     for raw_row in raw_rows:
-        items = normalize_raw_stocks_payload(raw_row.get("payload"))
-
+        payload = parse_payload(raw_row.get('payload'))
+        if (len(raw_rows) == 1 and isinstance(payload, dict)
+                and payload.get('empty_reason') == 'empty_api_payload' and payload.get('data') == []):
+            return []
+        items = normalize_raw_stocks_payload(payload)
+        if not items:
+            raise ValueError('Malformed or ambiguous empty stock source')
         for item in items:
-            stock_row = build_stock_row(raw_row, item)
+            row = build_stock_row(raw_row, item)
+            if row is None or not row.get('variant_key'):
+                raise ValueError('Incomplete stock identity in full snapshot')
+            for field in ('quantity', 'in_way_to_client', 'in_way_from_client'):
+                if row[field] < 0:
+                    raise ValueError('Negative stock quantity')
+            key = (row['product_key'], row['variant_key'], row['warehouse_key'])
+            if key in stocks and stocks[key] != row:
+                raise ValueError('Conflicting duplicate stock identity')
+            stocks[key] = row
+    return list(stocks.values())
 
-            if stock_row is None:
-                continue
 
-            dedupe_key = (
-                stock_row["user_id"],
-                stock_row["shop_id"],
-                stock_row["marketplace"],
-                stock_row["product_key"],
-                stock_row.get("variant_key"),
-                stock_row.get("warehouse_key"),
-            )
-
-            stocks_by_key[dedupe_key] = stock_row
-
-    rows = list(stocks_by_key.values())
-
-    rows_upserted = 0
-    if rows:
-        rows_upserted = upsert_rows(rows)
-
-    newest_row = raw_rows[-1]
-
-    return {
-        "rows_read": len(raw_rows),
-        "rows_upserted": rows_upserted,
-        "last_raw_updated_at": newest_row.get("updated_at"),
-        "last_raw_id": newest_row.get("id"),
-    }
+def run_normalization_job(job, state=None, registry_entry=None):
+    from db.stock_state import load_raw_snapshot, replace_stock_rows
+    user_id, shop_id = int(job['user_id']), int(job['shop_id'])
+    marketplace = job.get('marketplace') or MARKETPLACE
+    snapshot_date, raw_rows = load_raw_snapshot(supabase, user_id, shop_id, marketplace)
+    rows = build_complete_stock_rows(raw_rows)
+    count = replace_stock_rows(supabase, TARGET_TABLE, rows, user_id=user_id,
+                              shop_id=shop_id, marketplace=marketplace)
+    newest = max(raw_rows, key=lambda r: (str(r.get('updated_at') or ''), r['id']))
+    return {'rows_read': len(raw_rows), 'rows_upserted': count,
+            'last_raw_updated_at': newest.get('updated_at'), 'last_raw_id': newest['id']}
 
 
 if __name__ == "__main__":

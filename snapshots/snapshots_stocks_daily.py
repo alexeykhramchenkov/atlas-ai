@@ -201,35 +201,6 @@ def build_snapshots(rows: List[Dict[str, Any]], products_by_key: Dict[str, Dict[
     return result
 
 
-def chunked(items: List[Dict[str, Any]], size: int) -> List[List[Dict[str, Any]]]:
-    return [items[index:index + size] for index in range(0, len(items), size)]
-
-
-def upsert_snapshots(rows: List[Dict[str, Any]]) -> int:
-    if not rows:
-        print("Nothing to upsert")
-        return 0
-
-    sent = 0
-
-    for batch in chunked(rows, BATCH_SIZE):
-        (
-            supabase
-            .table(TARGET_TABLE)
-            .upsert(
-                batch,
-                on_conflict="user_id,shop_id,marketplace,product_key,snapshot_date",
-            )
-            .execute()
-        )
-
-        sent += len(batch)
-        print(f"Sent batch: {sent}/{len(rows)}")
-
-    return sent
-
-
-
 def run_snapshot_job(
     job: Dict[str, Any],
     state: Optional[Dict[str, Any]],
@@ -240,7 +211,11 @@ def run_snapshot_job(
     snapshot_date = job.get("date_to") or job.get("date_from") or date.today().isoformat()
 
     print("Fetching stock variant snapshots...")
-    variant_snapshots = fetch_variant_snapshots(snapshot_date=snapshot_date, user_id=user_id, shop_id=shop_id, marketplace=marketplace)
+    from db.stock_state import load_raw_snapshot
+    from normalized.normalized_wb_stocks import build_complete_stock_rows
+    from snapshots.snapshots_stocks_variants_daily import build_snapshot_row
+    _, raw_rows = load_raw_snapshot(supabase, user_id, shop_id, marketplace, snapshot_date)
+    variant_snapshots = [build_snapshot_row(row, snapshot_date) for row in build_complete_stock_rows(raw_rows)]
     print(f"Stock variant snapshots fetched: {len(variant_snapshots)}")
 
     print("Fetching products...")
@@ -250,15 +225,9 @@ def run_snapshot_job(
     snapshots = build_snapshots(variant_snapshots, products_by_key)
     print(f"Stock product snapshots prepared: {len(snapshots)}")
 
-    if not snapshots:
-        print("No stock product snapshots to upsert")
-        return {
-            "rows_read": len(variant_snapshots),
-            "rows_upserted": 0,
-            "last_processed_date": snapshot_date,
-        }
-
-    sent = upsert_snapshots(snapshots)
+    from db.stock_state import replace_stock_rows
+    sent = replace_stock_rows(supabase, TARGET_TABLE, snapshots, user_id=user_id,
+                              shop_id=shop_id, marketplace=marketplace, snapshot_date=snapshot_date)
 
     print("Done")
     print(f"Rows sent to {TARGET_TABLE}: {sent}")

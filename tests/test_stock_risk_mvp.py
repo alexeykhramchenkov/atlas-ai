@@ -43,7 +43,7 @@ class StockRiskTest(unittest.TestCase):
         tenant={'user_id':1,'shop_id':1,'marketplace':'wb'};snapshot=str(datetime.now(ZoneInfo('Europe/Moscow')).date())
         stocks=[{**tenant,'id':x,'snapshot_date':snapshot,'product_key':f'p{x:05}','total_quantity':10,'total_in_way_to_client':0,'total_in_way_from_client':0} for x in range(2001)]
         stocks+=[{**stocks[0],'id':99999,'user_id':2,'total_quantity':999}]
-        i=get_stocks(user_id=1,shop_id=1,supabase=DB({'metrics_stocks_daily':stocks,'normalized_products':[]}))
+        i=get_stocks(user_id=1,shop_id=1,supabase=DB({'raw_wb_stocks':[{**tenant,'id':1,'snapshot_date':snapshot}],'metrics_stocks_daily':stocks,'normalized_products':[]}))
         self.assertEqual(len(i['products']),2001);self.assertEqual(i['total_quantity'],20010)
 
 if __name__=='__main__': unittest.main()
