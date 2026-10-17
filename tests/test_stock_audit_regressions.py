@@ -17,7 +17,7 @@ class StockAuditRegressions(unittest.TestCase):
   r=self.route(text,{'last_product_key':'a','date_from':'2026-10-07','date_to':'2026-10-13'})
   self.assertEqual(r['product_key'],'a');self.assertEqual(r['date_to'],'2026-10-13')
  def facts(self):
-  return {'products':[{'product_key':k,'title':k} for k in ('a','b')],'orders':[{'snapshot_date':(date(2026,10,7)+timedelta(days=i)).isoformat(),'product_key':k,'orders_count':1} for i in range(7) for k in ('a','b')],'stocks':[{'snapshot_date':'2026-10-14','product_key':k,'total_quantity':1} for k in ('a','b')]}
+  return {'products':[{'product_key':k,'title':k} for k in ('a','b')],'orders':[{'snapshot_date':(date(2026,10,7)+timedelta(days=i)).isoformat(),'product_key':k,'orders_count':1} for i in range(7) for k in ('a','b')],'stocks':[{'snapshot_date':'2026-10-14','product_key':k,'total_quantity':1,'warehouse_quantity':1} for k in ('a','b')]}
  def request(self,metric):return {**CTX,'metric':metric,'dataset':'stocks','analysis':'best','entity':'product','period_days':7,'date_from':'2026-10-07','date_to':'2026-10-13','product_key':'a','limit':5}
  def test_dovoz_filters_article(self):
   r=calculate(self.request('replenishment_qty'),self.facts());self.assertEqual([x['product_key'] for x in r['rows']],['a']);self.assertEqual(r['rows'][0]['value'],13)

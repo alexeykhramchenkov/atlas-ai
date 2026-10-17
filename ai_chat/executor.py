@@ -362,10 +362,11 @@ class Executor:
                 from ai_chat.metric.stocks import _calculate_days_left
                 dates={'start_date':request.get('date_from'),'end_date':request.get('date_to')}
                 if not any(dates.values()):dates={'period_days':request.get('period_days',30)}
+                order_level='variant' if entity=='variant' else 'product'
                 try:
                     orders=get_orders(user_id=request['user_id'],shop_id=request['shop_id'],
                         marketplace=request.get('marketplace','wb'),product_key=request.get('product_key'),
-                        supabase=self.supabase,**dates)
+                        supabase=self.supabase,level=order_level,**dates)
                 except IncompleteOrdersError:
                     return {**context,'status':'incomplete'}
                 from datetime import date
@@ -374,8 +375,15 @@ class Executor:
                 stock_rows=facts['products']
                 if request.get('product_keys') is not None:
                     stock_rows=filter_rows(rows=stock_rows,conditions=[{'field':'product_key','operator':'in','value':request['product_keys']}])['rows']
-                counts={row['product_key']:row['orders_count'] for row in orders['products']}
-                rows=[{**row,'days_left':_calculate_days_left(row.get('warehouse_quantity'),counts.get(row['product_key'],0)/days)} for row in stock_rows]
+                if order_level=='variant':
+                    from ai_chat.analysis.analysis_type.ranked import group_rows
+                    stock_rows=group_rows(stock_rows,{'group_by':['product_key','variant_key'],
+                        'group_fields':['product_key','variant_key','title','size_name'],
+                        'value_field':'warehouse_quantity','aggregation':'sum'})
+                def identity(row):
+                    return (row['product_key'],row.get('variant_key')) if order_level=='variant' else row['product_key']
+                counts={identity(row):row['orders_count'] for row in orders['variants' if order_level=='variant' else 'products']}
+                rows=[{**row,'days_left':_calculate_days_left(row.get('warehouse_quantity'),counts.get(identity(row),0)/days)} for row in stock_rows]
                 value=rows[0]['days_left'] if len(rows)==1 else None
                 if analysis_name=='rank':
                     rows=filter_rows(rows=rows,conditions=[{'field':'days_left','operator':'lte','value':14}])['rows']

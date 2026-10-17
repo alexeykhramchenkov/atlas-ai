@@ -155,8 +155,9 @@ def calculate(request,facts):
         if not stocks:return missing('stock_snapshot')
         snapshot=max(str(r['snapshot_date'])[:10] for r in stocks)
         if (date.fromisoformat(end)+timedelta(days=1)-date.fromisoformat(snapshot)).days>2:return missing('stale_stock')
-        stock_by=group(stocks,['total_quantity'])
-        result['meta'].update(snapshot_date=snapshot,note='Оценка по всем заказам. Остаток включает склад и движение в обе стороны; это ориентир при прежнем темпе заказов.')
+        if metric=='replenishment_qty' and any(r.get('warehouse_quantity') is None for r in stocks):return missing('warehouse_stock_required')
+        stock_by=group(stocks,['total_quantity','warehouse_quantity'])
+        result['meta'].update(snapshot_date=snapshot,note=('Оценка по складскому остатку при прежнем темпе заказов.' if metric=='replenishment_qty' else 'Оценка по всем заказам. Остаток включает склад и движение в обе стороны; это ориентир при прежнем темпе заказов.'))
         if metric=='stock_days':
             pk=request.get('product_key')
             if pk not in stock_by:return {**result,'status':'no_product'}
@@ -177,7 +178,7 @@ def calculate(request,facts):
         rows=[]
         for pk,stock in stock_by.items():
             if request.get('product_key') and pk!=request['product_key']:continue
-            qty=stock['total_quantity'];count=orders.get(pk,{}).get('orders_count',0);avg=count/days
+            qty=stock['warehouse_quantity'] if metric=='replenishment_qty' else stock['total_quantity'];count=orders.get(pk,{}).get('orders_count',0);avg=count/days
             if metric=='stagnant_stock':
                 if qty>0 and count<=1:rows.append({'product_key':pk,'value':qty,'stock_qty':qty,'orders_count':count})
             elif metric=='replenishment_qty':

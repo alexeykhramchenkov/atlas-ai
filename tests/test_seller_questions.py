@@ -11,12 +11,12 @@ class SellerQuestions(unittest.TestCase):
   return {**CTX,'metric':metric,'dataset':q[3],'analysis':q[4],'entity':q[5],'period_days':7,'date_from':'2026-10-07','date_to':'2026-10-13','limit':5,**extra}
  def rows(self,**fields):
   return [{'snapshot_date':(date(2026,9,30)+timedelta(days=i)).isoformat(),'product_key':'a',**fields} for i in range(14)]
- def facts(self,**extra):return {'products':[{'product_key':'a','title':'A'}],'orders':self.rows(orders_count=1,cancelled_orders_count=1),'stocks':[{'snapshot_date':'2026-10-14','product_key':'a','total_quantity':2}],**extra}
+ def facts(self,**extra):return {'products':[{'product_key':'a','title':'A'}],'orders':self.rows(orders_count=1,cancelled_orders_count=1),'stocks':[{'snapshot_date':'2026-10-14','product_key':'a','total_quantity':2,'warehouse_quantity':2}],**extra}
  def test_all_25_questions_route_without_contract_keys(self):
   for q in QUESTIONS:
-   r=resolve_seller_question(q[1],{},CTX,resolve_explicit=lambda _:None,resolve_reference=lambda q,m:None)
-   self.assertEqual(r['metric'],q[2]);self.assertIn(r['analysis'],{'metric_value','best','worst'})
-   self.assertFalse(set(r)-set(CTX)-{'metric','dataset','analysis','entity','scope','period_days','date_from','date_to','limit','answer_scope','question_type','is_valid_question','error_code','message'})
+   r=resolve_seller_question(q[1],{},CTX,resolve_explicit=lambda _:{"product_key":"a"},resolve_reference=lambda q,m:{"product_key":"a"})
+   self.assertEqual(r['metric'],'days_left' if q[2] in {'replenishment_risk','stock_days','size_stock_days'} else q[2]);self.assertIn(r['analysis'],{'metric_value','best','worst','rank'})
+   self.assertFalse(set(r)-set(CTX)-{'metric','dataset','analysis','entity','scope','period_days','date_from','date_to','limit','answer_scope','question_type','product_key','product','is_valid_question','error_code','message'})
  def test_profit_and_jam_questions_not_in_catalog(self):
   self.assertFalse({11,12,13,15,24}&{q[0] for q in QUESTIONS})
  def test_comparison_requires_previous_week(self):
@@ -31,7 +31,7 @@ class SellerQuestions(unittest.TestCase):
   self.assertEqual(calculate(self.request('stock_days',product_key='a'),self.facts())['rows'][0]['value'],2)
   self.assertEqual(calculate(self.request('replenishment_qty'),self.facts())['rows'][0]['value'],12)
  def test_stale_stock_suppresses_estimate(self):
-  self.assertEqual(calculate(self.request('stock_days',product_key='a'),self.facts(stocks=[{'snapshot_date':'2026-10-01','product_key':'a','total_quantity':2}]))['status'],'incomplete')
+  self.assertEqual(calculate(self.request('stock_days',product_key='a'),self.facts(stocks=[{'snapshot_date':'2026-10-01','product_key':'a','total_quantity':2,'warehouse_quantity':2}]))['status'],'incomplete')
  def test_no_orders_does_not_mean_infinite_stock_days(self):
   self.assertEqual(calculate(self.request('stock_days',product_key='a'),self.facts(orders=self.rows(orders_count=0)))['status'],'no_orders')
  def test_regions_count_cancellations_and_deduplicate(self):

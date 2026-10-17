@@ -10,10 +10,10 @@ QUESTIONS = [
  (3,'Какие товары стали заказывать чаще?','orders_growth','orders','best','product',7),
  (4,'У каких товаров сильнее всего упали заказы?','orders_decline','orders','worst','product',7),
  (5,'Какие товары вообще не заказывали за месяц?','zero_orders','orders','worst','product',30),
- (6,'Какие товары пора пополнить?','replenishment_risk','stocks','worst','product',7),
- (7,'На сколько дней хватит остатков этого товара?','stock_days','stocks','metric_value','product',7),
- (8,'Какие размеры скоро закончатся?','size_stock_days','stocks','worst','variant',7),
- (9,'Сколько штук нужно довезти на ближайшие две недели?','replenishment_qty','stocks','best','product',7),
+ (6,'Какие товары пора пополнить?','replenishment_risk','stocks','worst','product',30),
+ (7,'На сколько дней хватит остатков этого товара?','stock_days','stocks','metric_value','product',30),
+ (8,'Какие размеры скоро закончатся?','size_stock_days','stocks','worst','variant',30),
+ (9,'Сколько штук нужно довезти на ближайшие две недели?','replenishment_qty','stocks','best','product',30),
  (32,'Какие товары с остатком не заказывают?','stock_without_orders','stocks','worst','product',7),
  (10,'Какие товары лежат на складе и почти не продаются?','stagnant_stock','stocks','worst','product',30),
  (14,'Сколько маркетплейс удержал за комиссии, доставку и хранение?','wb_expenses','realization','metric_value','store',30),
@@ -107,4 +107,13 @@ def resolve_seller_question(question, memory, context, *, resolve_explicit, reso
                 if memory.get(k):req[k]=memory[k]
             from datetime import date
             req['period_days']=(date.fromisoformat(req['date_to'])-date.fromisoformat(req['date_from'])).days+1
+    forecast_aliases={'replenishment_risk':('rank','product'),'stock_days':('metric_value','product'),'size_stock_days':('rank','variant')}
+    if metric in forecast_aliases:
+        analysis,entity=forecast_aliases[metric]
+        req.update(dataset='stocks',metric='days_left',analysis=analysis,entity=entity)
+        # Demand pace is a separate window from the previous conversation period.
+        if not period_followup and not re.search(r'за (?:последни[ех] )?(?:неделю|месяц|\d+ д(?:ня|ней))',text):
+            from datetime import date
+            pace_end=date.fromisoformat(req['date_to'])
+            req.update(period_days=30,date_from=(pace_end-timedelta(days=29)).isoformat())
     return req
