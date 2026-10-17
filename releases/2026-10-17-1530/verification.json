@@ -29,5 +29,7 @@
     "Four stock product keys have no product title in the current catalog"
   ],
   "get_contracts_changed": false,
-  "fact_data_copied": false
+  "fact_data_copied": false,
+  "stock_verification_superseded_by": "2026-10-17-stock-repair",
+  "stock_verification_correction": "833 was accumulated obsolete warehouse state, not verified WB stock. Correct totals: warehouse70 + to18 + from33 =121; all21 cabinet rows reconciled."
 }

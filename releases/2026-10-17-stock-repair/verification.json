@@ -1,0 +1,57 @@
+{
+  "runtime_commit": "4e5966d",
+  "automated_tests": 355,
+  "database_rollback_probes": 6,
+  "cabinet_products_verified": 21,
+  "raw_products_verified": 19,
+  "cabinet_zero_products_absent_from_raw": 2,
+  "stock_totals": {
+    "warehouse": 70,
+    "to_customer": 18,
+    "from_customer": 33,
+    "total": 121
+  },
+  "stock_80_percent": {
+    "products": 7,
+    "quantity": 99,
+    "denominator": 121
+  },
+  "replenishment": {
+    "pace_days": 30,
+    "threshold_days": 14,
+    "warehouse_based": true,
+    "urgent_products": 9,
+    "angel_days": 86,
+    "fairy_days": 4
+  },
+  "registered_jobs": [
+    228,
+    140,
+    141,
+    149,
+    150
+  ],
+  "telegram_passed_ids": [
+    335,
+    339,
+    340,
+    341,
+    342,
+    343,
+    344,
+    345,
+    346,
+    347,
+    348,
+    349
+  ],
+  "initial_failures_fixed_and_retested": [
+    336,
+    338
+  ],
+  "raw_unchanged": true,
+  "historical_fact_values_unchanged": true,
+  "get_contracts_changed": false,
+  "test_data_copied": false,
+  "daily_schedule_unchanged": true
+}

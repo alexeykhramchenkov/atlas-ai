@@ -15,5 +15,18 @@
   "automated_tests": 355,
   "database_rollback_probes": 6,
   "get_contracts_changed": false,
-  "status": "data_verified_telegram_retest"
+  "status": "verified",
+  "runtime_commit": "4e5966d",
+  "registered_jobs": [
+    228,
+    140,
+    141,
+    149,
+    150
+  ],
+  "cabinet_products_verified": 21,
+  "warehouse_quantity": 70,
+  "total_quantity": 121,
+  "stock_80_percent_products": 7,
+  "stock_80_percent_quantity": 99
 }
