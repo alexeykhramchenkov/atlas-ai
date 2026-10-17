@@ -36,3 +36,20 @@ class DailyFunnelSyncTests(unittest.TestCase):
 
     def test_daily_budget_covers_all_registered_sources(self):
         self.assertGreaterEqual(DEFAULT_MAX_JOBS, 100)
+
+class DailyAdvertisingSyncTests(unittest.TestCase):
+    def test_refreshes_last_completed_day_even_when_raw_exists(self):
+        from ingestion.marketplaces.wb.sync import sync_ads_stats as ads
+        for ids in ([], [123]):
+            with self.subTest(ids=ids), ExitStack() as stack:
+                stack.enter_context(patch.object(ads,'load_advert_ids',return_value=ids))
+                stack.enter_context(patch.object(ads,'is_raw_ads_stats_day_loaded',return_value=True))
+                stack.enter_context(patch.object(ads,'delete_raw_ads_stats_day'))
+                insert=stack.enter_context(patch.object(ads,'insert_raw_ads_stats',return_value=1))
+                api=stack.enter_context(patch.object(ads,'get_ads_fullstats',return_value={}))
+                state=stack.enter_context(patch.object(ads,'upsert_sync_state'))
+                result=ads.run_sync_job(dict(user_id=1,shop_id=1,job_type='auto_sync',date_from='2026-10-17',date_to='2026-10-17'),{},dict(daily_window_days=3))
+                self.assertEqual(insert.call_args.kwargs['day'],'2026-10-16')
+                self.assertEqual(state.call_args.kwargs['date_to'],date(2026,10,16))
+                self.assertEqual(result['days_loaded'],1)
+                if ids:self.assertEqual(api.call_args.kwargs['date_to'],'2026-10-16')

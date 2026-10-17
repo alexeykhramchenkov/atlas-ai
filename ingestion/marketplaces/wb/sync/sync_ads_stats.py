@@ -239,6 +239,8 @@ def run_sync_job(
 
     job_date_from = parse_job_date(job["date_from"])
     date_to = parse_job_date(job["date_to"])
+    if job.get("job_type") == "auto_sync":
+        date_to -= timedelta(days=1)
 
     if job.get("job_type") == "coverage_repair":
         date_from = job_date_from
@@ -274,7 +276,7 @@ def run_sync_job(
                 shop_id=shop_id,
                 marketplace=marketplace,
                 day=day_str,
-            ):
+            ) and not (job.get("job_type") == "auto_sync" and day == date_to):
                 days_skipped += 1
                 continue
 
@@ -338,7 +340,7 @@ def run_sync_job(
             shop_id=shop_id,
             marketplace=marketplace,
             day=day_str,
-        ):
+        ) and not (job.get("job_type") == "auto_sync" and day == date_to):
             days_skipped += 1
             print(f"WB ads_stats job | day={day_str} | already_loaded=true")
             continue
