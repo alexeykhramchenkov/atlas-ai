@@ -19,3 +19,15 @@ class PresentationStyleTests(unittest.TestCase):
  def test_period_heading_counts_inclusive_days(self):
   text,_=self.render({'date_from':'2026-09-17','date_to':'2026-10-16','rows':[]})
   self.assertTrue(text.startswith('Остатки · 30 дней\n17 сентября — 16 октября'))
+
+class CountryGroupingTests(unittest.TestCase):
+ def test_country_header_once_and_escaped(self):
+  rule={'template_name':'compact_text','title_template':'<b>Регионы</b>\n{items}','fields':[{'template':{
+   'telegram_format':'html_bold','rows_path':'rows','group_by':'country_name','group_header_template':'<b>{group}</b>:',
+   'item_fields':[{'name':'region','path':'region_name','formatter':'html_text'},{'name':'value','path':'value','formatter':'number'}],
+   'item_template':'• {region}: <b>{value}</b>'}}]}
+  data={'rows':[{'country_name':'Россия <А>','region_name':'Москва','value':4},{'country_name':'Россия <А>','region_name':'Татарстан','value':2},{'country_name':'Казахстан','region_name':'Алматы','value':1}]}
+  answer=apply_template(rule=rule,fields=[],data=data,request={},language='ru');text,spans=prepare_text(answer,rule)
+  self.assertEqual(text.count('Россия <А>:'),1)
+  self.assertIn('• Москва: 4\n• Татарстан: 2',text)
+  self.assertEqual(len(spans),6)

@@ -1,0 +1,15 @@
+{
+  "unit_tests": 323,
+  "production_runtime_commit_verified": "e4a830a",
+  "railway_deployment_verified": "47be5932-34d4-40da-8f4f-d443c5c40eec",
+  "rule_rows_verified": 103,
+  "get_contracts_changed": false,
+  "fact_data_copied": false,
+  "telegram_checks": [
+    "Где смотрят, но не добавляют в корзину?",
+    "Где добавляют в корзину, но не покупают?",
+    "В какие города чаще заказывают?"
+  ],
+  "dialogue_planner_enabled": false,
+  "daily_schedule_unchanged": true
+}

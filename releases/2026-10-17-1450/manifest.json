@@ -50,5 +50,13 @@
   "excluded": [
     "local unauthenticated web API"
   ],
-  "tests_passed": 322
+  "tests_passed": 323,
+  "status": "published",
+  "configuration_verified": true,
+  "telegram_verified": [
+    "views_without_carts",
+    "carts_without_orders",
+    "regions_store"
+  ],
+  "operator_receipts": "ATLAS/releases/2026-10-17-1450"
 }

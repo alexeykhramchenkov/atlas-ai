@@ -337,6 +337,7 @@
         },
         {
           "template": {
+            "group_by": "country_name",
             "rows_path": "rows",
             "empty_text": "За выбранный период этот товар не заказывали.",
             "item_fields": [
@@ -357,13 +358,13 @@
               "no_product": "Сначала спроси: какой товар лучший?"
             },
             "equal_summary": "Все эти регионы на первом месте.",
-            "item_template": "• {region} — <b>{count}</b> {orders_word}{cancellation_note}",
+            "item_template": "• {region}: <b>{count}</b> {orders_word}",
             "partial_intro": "Чаще всего этот товар заказывали в этих регионах",
             "complete_intro": "Этот товар заказывали в следующих регионах",
             "omit_same_year": true,
             "ranked_summary": "Регионы показаны по числу заказов, от большего к меньшему.",
             "telegram_format": "html_bold",
-            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+            "group_header_template": "{group}:"
           }
         }
       ]
@@ -1715,16 +1716,17 @@
         },
         {
           "template": {
+            "group_by": "country_name",
             "rows_path": "rows",
             "empty_text": "Таких товаров за выбранный период не найдено.",
             "item_fields": [
               {
-                "name": "title",
-                "path": "title",
+                "name": "region",
+                "path": "region_name",
                 "formatter": "html_text"
               },
               {
-                "name": "value",
+                "name": "count",
                 "path": "value",
                 "formatter": "number"
               }
@@ -1735,11 +1737,10 @@
               "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
               "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
             },
-            "item_template": "• {title}: <b>{value}</b> {orders_word}{cancellation_note}",
+            "item_template": "• {region}: <b>{count}</b> {orders_word}",
             "omit_same_year": true,
             "telegram_format": "html_bold",
-            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
-            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+            "group_header_template": "{group}:"
           }
         },
         {
@@ -4790,7 +4791,7 @@
       "question_type": "simple",
       "template_name": "compact_text",
       "language": "ru",
-      "title_template": "<b>Просмотры без корзин</b>{period_heading}\n\n{items}",
+      "title_template": "<b>Просмотры без корзин</b>{period_heading}\n\nКорзин: <b>0</b>\n\n{items}",
       "fields": [
         {
           "match": {
@@ -4822,7 +4823,7 @@
               "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
               "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
             },
-            "item_template": "• {title}: просмотров — <b>{value}</b>, корзин — <b>0</b>",
+            "item_template": "• {title}: <b>{value}</b> просм.",
             "omit_same_year": true,
             "telegram_format": "html_bold",
             "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
