@@ -98,7 +98,7 @@ def resolve_seller_question(question, memory, context, *, resolve_explicit, reso
         product_text=re.sub(r' за (?:последни[ех] )?(?:неделю|месяц|\d+ д(?:ня|ней))$','',text)
         explicit=not period_followup and (explicit_article or (not product_reference and product_text!=base and product_text not in aliases and metric!='size_stock_days'))
         product=resolve_explicit(question) if explicit else None
-        if not explicit:product=resolve_reference('этот товар' if period_followup or metric=='size_stock_days' else question,memory)
+        if not explicit:product=resolve_reference('этот товар' if period_followup or product_text==base or metric=='size_stock_days' else question,memory)
         if not product or not product.get('product_key'):
             return {**req,'is_valid_question':False,'error_code':'unclear_question','message':'По какому товару? Напиши название или артикул WB.'}
         req.update(product_key=product['product_key'],product=product)

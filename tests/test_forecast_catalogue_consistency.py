@@ -38,3 +38,8 @@ class ForecastCatalogueTests(unittest.TestCase):
   for entity in ('variant','warehouse','region'):
    r=validate_clarification_updates([{'field':'selection','value':'shown_products'}],request={'dataset':'stocks','metric':'days_left','entity':entity},memory={'shown_product_keys':['a']})
    self.assertEqual(r['entity'],entity);self.assertEqual(r['product_keys'],['a'])
+
+ def test_registered_product_question_uses_single_context_product(self):
+  q=next(x[1] for x in QUESTIONS if x[2]=='price_change_orders')
+  r=resolve_seller_question(q,{}, {},resolve_explicit=lambda _:None,resolve_reference=lambda text,_:{'product_key':'a','match_type':'memory'} if text=='этот товар' else None)
+  self.assertTrue(r['is_valid_question']);self.assertEqual(r['product_key'],'a')
