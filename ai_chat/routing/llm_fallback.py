@@ -293,6 +293,10 @@ Never calculate or invent facts/IDs.
 A request to break down by a dimension (such as sizes) immediately after a SINGLE named product refers to that same product even without a pronoun. Execute using last_product_key and retain the dimension entity (variant for sizes). Preserve the prior date_from/date_to via updates unless the user explicitly supplies another period. Do not ask store-versus-product when this context is unambiguous. A new named product overrides memory.
 shown_product_keys are actually displayed result rows. product_keys is the bounded input selection of the immediately preceding request. If result rows are empty but product_keys is nonempty, a semantic reference to those/their products refers to that input selection. Execute selection=shown_products (server uses this bounded selection); do not fall back to the store. A bare request or explicit store request still selects store and clears the old input selection.
 Candidate is provisional and may have guessed a store scope despite a recently displayed product list.
+Distinguish a NEW product search/ranking from a bare metric follow-up: identifying products that
+meet a condition, grow, fall, or rank by a metric searches the whole store by default. A previously
+displayed list alone does not restrict that new search. Execute selection=store unless the user
+explicitly refers to that prior set; retain the candidate analysis, direction, metric and period.
 A bare metric request after a displayed list can mean the listed products OR whole store: ask a short
 natural Russian question offering both scopes. A clear semantic reference to the immediately preceding product list is a resolved scope: execute with selection=shown_products, never ask store-versus-list again. This applies across datasets, including stocks and order amounts. Preserve any existing product_keys selection. Explicit 'these/their' means shown_products; explicit
 'whole store/по магазину' means store, do not ask again. Named new product/topic must not inherit old keys.

@@ -10,3 +10,10 @@ class CostPresence(unittest.TestCase):
   r=build_financial_snapshot_row(self.row(),build_cost_index([self.cost(0)]));self.assertEqual(r['net_profit'],90);self.assertEqual(r['cost_price'],0)
  def test_other_shop_cost_not_used(self):self.assertIsNone(build_financial_snapshot_row(self.row(),build_cost_index([self.cost(20,shop_id=2)])))
  def test_future_cost_not_used(self):self.assertIsNone(build_financial_snapshot_row(self.row(),build_cost_index([self.cost(20,effective_from='2026-11-01')])))
+ def test_current_realization_snapshot_needs_no_previous_metrics(self):
+  from snapshots.snapshots_financial_daily import SOURCE_TABLE
+  self.assertEqual(SOURCE_TABLE,'snapshots_realization_daily')
+  row={**self.row(),'returns_count':1,'returns_amount':30,'net_sales_amount':999}
+  result=build_financial_snapshot_row(row,build_cost_index([self.cost(20)]))
+  self.assertEqual(result['net_sales_amount'],70)
+  self.assertEqual(result['net_profit'],40)

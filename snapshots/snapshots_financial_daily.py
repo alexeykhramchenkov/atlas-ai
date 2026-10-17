@@ -6,7 +6,7 @@ from typing import Any
 from db.client import supabase
 
 
-SOURCE_TABLE = "metrics_realization_daily"
+SOURCE_TABLE = "snapshots_realization_daily"
 COSTS_TABLE = "normalized_product_costs"
 TARGET_TABLE = "snapshots_financial_daily"
 MARKETPLACE = "wb"
@@ -186,7 +186,7 @@ def build_financial_snapshot_row(
 
     sales_amount = to_float(metric_row.get("sales_amount"))
     returns_amount = to_float(metric_row.get("returns_amount"))
-    net_sales_amount = to_float(metric_row.get("net_sales_amount"))
+    net_sales_amount = sales_amount - returns_amount
 
     commission_amount = to_float(metric_row.get("wb_commission_amount"))
     logistics_amount = to_float(metric_row.get("logistics_amount"))
