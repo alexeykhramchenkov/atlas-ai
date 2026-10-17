@@ -18,7 +18,7 @@ Each normalizer is responsible for its own coverage/watermark logic.
 """
 
 from __future__ import annotations
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 import sys
 from pathlib import Path
@@ -30,6 +30,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
 from db.client import supabase  # noqa: E402
+from core.scheduling import is_due
 from normalized.orchestrators.normalization_job_manager import create_job_if_missing  # noqa: E402
 from normalized.orchestrators.normalization_registry import get_enabled_registry_entries  # noqa: E402
 from normalized.orchestrators.normalization_state_manager import get_or_create_state  # noqa: E402
@@ -77,9 +78,7 @@ def should_create_normalization_job(state: Optional[Dict[str, Any]], registry_en
         return True
 
     run_frequency_hours = registry_entry.get("run_frequency_hours") or 24
-    next_allowed_at = last_success_at + timedelta(hours=run_frequency_hours)
-
-    return datetime.now(timezone.utc) >= next_allowed_at
+    return is_due(last_success_at, run_frequency_hours, datetime.now(timezone.utc))
 
 
 def schedule_normalization_jobs(marketplace: Optional[str] = None) -> Dict[str, int]:

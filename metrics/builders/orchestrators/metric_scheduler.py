@@ -1,6 +1,7 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from db.client import supabase
+from core.scheduling import is_due
 
 from metrics.builders.orchestrators.metric_job_manager import metric_job_manager
 from metrics.builders.orchestrators.metric_registry import metric_registry
@@ -41,9 +42,7 @@ def should_create_metric_job(state: dict | None, registry_entry: dict) -> bool:
         return True
 
     run_frequency_hours = registry_entry.get("run_frequency_hours") or 24
-    next_allowed_at = last_success_at + timedelta(hours=run_frequency_hours)
-
-    return datetime.now(timezone.utc) >= next_allowed_at
+    return is_due(last_success_at, run_frequency_hours, datetime.now(timezone.utc))
 
 
 def run_metric_scheduler():

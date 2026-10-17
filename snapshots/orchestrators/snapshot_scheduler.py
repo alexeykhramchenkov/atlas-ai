@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 
 from db.client import supabase
+from core.scheduling import is_due
 from snapshots.orchestrators.snapshot_job_manager import create_snapshot_job
 from snapshots.orchestrators.snapshot_registry import get_enabled_snapshot_registry
 from snapshots.orchestrators.snapshot_state_manager import ensure_snapshot_state
@@ -31,7 +32,7 @@ def should_create_snapshot_job(*, state: dict[str, Any], registry_entry: dict[st
     except ValueError:
         return True
 
-    return utc_now() - last_success_dt >= timedelta(hours=run_frequency_hours)
+    return is_due(last_success_dt, run_frequency_hours, utc_now())
 
 
 def get_active_snapshot_connections(*, marketplace: str = "wb") -> list[dict[str, Any]]:
