@@ -314,6 +314,12 @@ def run_sync_job(
 
     date_from = parse_job_date(job["date_from"])
     date_to = parse_job_date(job["date_to"])
+    if job.get("job_type") == "auto_sync":
+        # Automatic daily jobs are stamped with the run date. Load completed
+        # days instead, retaining the configured window to recover gaps.
+        date_to -= timedelta(days=1)
+        lookback = max(int((rule or {}).get("daily_window_days") or 1), 1)
+        date_from = date_to - timedelta(days=lookback - 1)
 
     request_sleep_sec = int((rule or {}).get("request_sleep_sec") or 5)
     max_sleep_sec = int((rule or {}).get("max_sleep_sec") or 300)
@@ -368,7 +374,7 @@ def run_sync_job(
             shop_id=shop_id,
             marketplace=marketplace,
             day=day_str,
-        ):
+        ) and not (job.get("job_type") == "auto_sync" and day == date_to):
             days_skipped += 1
             print(f"WB funnel job | day={day_str} | already loaded | skipped")
 

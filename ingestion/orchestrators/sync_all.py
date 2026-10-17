@@ -8,7 +8,7 @@ from ingestion.orchestrators.sync_recovery_manager import recover_stale_running_
 
 
 DEFAULT_MARKETPLACE = "wb"
-DEFAULT_MAX_JOBS = 10
+DEFAULT_MAX_JOBS = 100
 
 
 def run_sync_all(
