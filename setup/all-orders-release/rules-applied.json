@@ -1,0 +1,448 @@
+[
+  {
+    "id": 1,
+    "question_type": "lookup_chain",
+    "template_name": "top_product_stock",
+    "language": "ru",
+    "title_template": "Товар с топ продажами",
+    "fields": [
+      {
+        "path": "steps.0.result.rows.0.title",
+        "label": "Товар",
+        "formatter": "text"
+      },
+      {
+        "path": "steps.0.result.rows.0.product_key",
+        "label": "Артикул",
+        "formatter": "text"
+      },
+      {
+        "path": "steps.0.result.rows.0.orders_count",
+        "label": "Заказы за период",
+        "formatter": "number"
+      },
+      {
+        "path": "steps.0.result.rows.0.gross_order_value",
+        "label": "Выручка",
+        "formatter": "money"
+      },
+      {
+        "path": "steps.1.result.rows.0.stock_qty",
+        "label": "Остаток",
+        "formatter": "qty"
+      },
+      {
+        "path": "steps.1.result.rows.0.stock_in_way_to_client",
+        "label": "В пути к клиенту",
+        "formatter": "qty"
+      },
+      {
+        "path": "steps.1.result.rows.0.stock_in_way_from_client",
+        "label": "В пути от клиента",
+        "formatter": "qty"
+      },
+      {
+        "path": "steps.1.result.rows.0.stock_available_total",
+        "label": "Доступно всего",
+        "formatter": "qty"
+      },
+      {
+        "path": "steps.1.result.rows.0.avg_daily_orders",
+        "label": "Средние продажи в день",
+        "formatter": "number"
+      },
+      {
+        "path": "steps.1.result.rows.0.days_left",
+        "label": "Хватит на",
+        "formatter": "days"
+      },
+      {
+        "path": "steps.1.result.rows.0.days_left_total",
+        "label": "С учетом товара в пути",
+        "formatter": "days"
+      }
+    ],
+    "priority": 10,
+    "is_active": true,
+    "created_at": "2026-06-22T10:53:26.78526+00:00",
+    "updated_at": "2026-06-22T11:09:50.278402+00:00"
+  },
+  {
+    "id": 2,
+    "question_type": "lookup_chain",
+    "template_name": "top_product_stock",
+    "language": "en",
+    "title_template": "Top Selling Product",
+    "fields": [
+      {
+        "path": "steps.0.result.rows.0.title",
+        "label": "Product",
+        "formatter": "text"
+      },
+      {
+        "path": "steps.0.result.rows.0.product_key",
+        "label": "SKU",
+        "formatter": "text"
+      },
+      {
+        "path": "steps.0.result.rows.0.orders_count",
+        "label": "Orders (30d)",
+        "formatter": "number"
+      },
+      {
+        "path": "steps.0.result.rows.0.gross_order_value",
+        "label": "Revenue",
+        "formatter": "money"
+      },
+      {
+        "path": "steps.1.result.rows.0.stock_qty",
+        "label": "Current Stock",
+        "formatter": "qty"
+      },
+      {
+        "path": "steps.1.result.rows.0.stock_in_way_to_client",
+        "label": "In Transit To Customer",
+        "formatter": "qty"
+      },
+      {
+        "path": "steps.1.result.rows.0.stock_in_way_from_client",
+        "label": "Returning From Customer",
+        "formatter": "qty"
+      },
+      {
+        "path": "steps.1.result.rows.0.stock_available_total",
+        "label": "Total Available Stock",
+        "formatter": "qty"
+      },
+      {
+        "path": "steps.1.result.rows.0.avg_daily_orders",
+        "label": "Average Daily Sales",
+        "formatter": "number"
+      },
+      {
+        "path": "steps.1.result.rows.0.days_left",
+        "label": "Days Left",
+        "formatter": "days"
+      },
+      {
+        "path": "steps.1.result.rows.0.days_left_total",
+        "label": "Days Left Including In Transit",
+        "formatter": "days"
+      }
+    ],
+    "priority": 10,
+    "is_active": true,
+    "created_at": "2026-06-22T10:53:26.78526+00:00",
+    "updated_at": "2026-06-22T11:13:57.641341+00:00"
+  },
+  {
+    "id": 3,
+    "question_type": "simple",
+    "template_name": "ranking_list",
+    "language": "ru",
+    "title_template": "Топ товаров по заказам за последние {period_days} дней:",
+    "fields": [
+      {
+        "match": {
+          "entity": "product",
+          "metric": "orders_count",
+          "dataset": "orders",
+          "analysis": "best"
+        }
+      },
+      {
+        "template": {
+          "rows_path": "rows",
+          "empty_text": "Данных по заказам товаров не найдено.",
+          "summary_template": "Больше всего заказов сейчас дают первые товары в рейтинге. Основной лидер — {top_product}."
+        }
+      },
+      {
+        "path": "title",
+        "role": "item_label",
+        "formatter": "text",
+        "fallback_paths": [
+          "product_name",
+          "product_key"
+        ]
+      },
+      {
+        "path": "product_key",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "orders_count",
+        "role": "item_value",
+        "unit": "заказов",
+        "formatter": "number",
+        "fallback_paths": [
+          "orders",
+          "value"
+        ]
+      }
+    ],
+    "priority": 20,
+    "is_active": true,
+    "created_at": "2026-06-29T13:43:34.623475+00:00",
+    "updated_at": "2026-06-29T13:43:34.623475+00:00"
+  },
+  {
+    "id": 4,
+    "question_type": "simple",
+    "template_name": "ranking_list",
+    "language": "ru",
+    "title_template": "Топ товаров по выручке за последние {period_days} дней:",
+    "fields": [
+      {
+        "match": {
+          "entity": "product",
+          "metric": "orders_revenue",
+          "dataset": "orders",
+          "analysis": "best"
+        }
+      },
+      {
+        "template": {
+          "rows_path": "rows",
+          "empty_text": "Данных по выручке товаров не найдено.",
+          "summary_template": "Основная выручка сосредоточена в верхних товарах рейтинга. Лидер по выручке — {top_product}."
+        }
+      },
+      {
+        "path": "title",
+        "role": "item_label",
+        "formatter": "text",
+        "fallback_paths": [
+          "product_name",
+          "product_key"
+        ]
+      },
+      {
+        "path": "product_key",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "gross_order_value",
+        "role": "item_value",
+        "formatter": "money",
+        "fallback_paths": [
+          "orders_revenue",
+          "revenue",
+          "value"
+        ]
+      }
+    ],
+    "priority": 21,
+    "is_active": true,
+    "created_at": "2026-06-29T13:43:34.884921+00:00",
+    "updated_at": "2026-06-29T13:43:34.884921+00:00"
+  },
+  {
+    "id": 5,
+    "question_type": "simple",
+    "template_name": "ranking_list",
+    "language": "ru",
+    "title_template": "Товары с наибольшими остатками:",
+    "fields": [
+      {
+        "match": {
+          "entity": "product",
+          "metric": "stock_qty",
+          "dataset": "stocks",
+          "analysis": "best"
+        }
+      },
+      {
+        "template": {
+          "rows_path": "rows",
+          "empty_text": "Данных по остаткам товаров не найдено.",
+          "summary_template": "Самый большой остаток сейчас у {top_product}. Эти товары стоит отслеживать отдельно."
+        }
+      },
+      {
+        "path": "title",
+        "role": "item_label",
+        "formatter": "text",
+        "fallback_paths": [
+          "product_name",
+          "product_key"
+        ]
+      },
+      {
+        "path": "product_key",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "total_quantity",
+        "role": "item_value",
+        "unit": "шт.",
+        "formatter": "number",
+        "fallback_paths": [
+          "stock_qty",
+          "stock",
+          "value"
+        ]
+      }
+    ],
+    "priority": 22,
+    "is_active": true,
+    "created_at": "2026-06-29T13:43:35.148341+00:00",
+    "updated_at": "2026-06-29T13:43:35.148341+00:00"
+  },
+  {
+    "id": 6,
+    "question_type": "simple",
+    "template_name": "compact_text",
+    "language": "ru",
+    "title_template": "У тебя {count} {orders_word} 🎉{cancellation_line}\n\nПериод: {period}",
+    "fields": [
+      {
+        "match": {
+          "entity": "store",
+          "metric": "orders_count",
+          "dataset": "orders",
+          "analysis": "metric_value"
+        }
+      },
+      {
+        "template": {
+          "status_text": {
+            "no_data": "За выбранный период заказов не найдено.",
+            "incomplete": "Пока не хватает данных за весь выбранный период. Сначала загрузим заказы магазина.",
+            "no_product": "Сначала спроси: какой товар лучший?"
+          },
+          "cancellation_template": "\nИз них отменили {cancelled_count}."
+        }
+      },
+      {
+        "path": "orders_count",
+        "label": "count",
+        "formatter": "number"
+      }
+    ],
+    "priority": 5,
+    "is_active": true,
+    "created_at": "2026-10-14T02:33:39.637535+00:00",
+    "updated_at": "2026-10-14T02:33:39.637535+00:00"
+  },
+  {
+    "id": 7,
+    "question_type": "simple",
+    "template_name": "compact_text",
+    "language": "ru",
+    "title_template": "Лучше всего заказывали — {title} 👑\nАртикул WB: {article}\n\nЗаказали {count} {times_word}.{cancellation_line}\n\nПериод: {period}",
+    "fields": [
+      {
+        "match": {
+          "entity": "product",
+          "metric": "orders_count",
+          "dataset": "orders",
+          "analysis": "best"
+        }
+      },
+      {
+        "template": {
+          "status_text": {
+            "no_data": "За выбранный период заказов не найдено.",
+            "incomplete": "Пока не хватает данных за весь выбранный период. Сначала загрузим заказы магазина.",
+            "no_product": "Сначала спроси: какой товар лучший?"
+          },
+          "cancelled_path": "rows.0.cancelled_orders_count",
+          "cancellation_template": "\nИз них отменили {cancelled_count}."
+        }
+      },
+      {
+        "path": "rows.0.title",
+        "label": "title",
+        "formatter": "text"
+      },
+      {
+        "path": "rows.0.marketplace_product_id",
+        "label": "article",
+        "formatter": "text"
+      },
+      {
+        "path": "rows.0.value",
+        "label": "count",
+        "formatter": "number"
+      }
+    ],
+    "priority": 5,
+    "is_active": true,
+    "created_at": "2026-10-14T02:33:39.637535+00:00",
+    "updated_at": "2026-10-14T02:33:39.637535+00:00"
+  },
+  {
+    "id": 8,
+    "question_type": "simple",
+    "template_name": "compact_text",
+    "language": "ru",
+    "title_template": "{region_intro} 📍\n\n{items}\n\nПериод: {period}",
+    "fields": [
+      {
+        "match": {
+          "entity": "region",
+          "metric": "orders_count",
+          "dataset": "orders",
+          "analysis": "best"
+        }
+      },
+      {
+        "template": {
+          "rows_path": "rows",
+          "empty_text": "За выбранный период этот товар не заказывали.",
+          "item_fields": [
+            {
+              "name": "region",
+              "path": "region_name"
+            },
+            {
+              "name": "count",
+              "path": "value",
+              "formatter": "number"
+            }
+          ],
+          "status_text": {
+            "no_data": "За выбранный период заказов не найдено.",
+            "incomplete": "Пока не хватает данных за весь выбранный период. Сначала загрузим заказы магазина.",
+            "no_product": "Сначала спроси: какой товар лучший?"
+          },
+          "equal_summary": "Все эти регионы на первом месте.",
+          "item_template": "• {region} — {count} {orders_word}{cancellation_note}",
+          "partial_intro": "Чаще всего этот товар заказывали в этих регионах",
+          "complete_intro": "Этот товар заказывали в следующих регионах",
+          "ranked_summary": "Регионы показаны по числу заказов, от большего к меньшему.",
+          "item_cancellation_template": " (отменили {cancelled_count})"
+        }
+      }
+    ],
+    "priority": 5,
+    "is_active": true,
+    "created_at": "2026-10-14T02:33:39.637535+00:00",
+    "updated_at": "2026-10-14T02:33:39.637535+00:00"
+  },
+  {
+    "id": 9,
+    "question_type": "simple",
+    "template_name": "top_product_stock",
+    "language": "ru",
+    "title_template": "По какому товару? Напиши название или артикул WB.",
+    "fields": [
+      {
+        "match": {
+          "entity": "region",
+          "metric": "orders_count",
+          "error_code": "unclear_question",
+          "is_valid_question": false
+        }
+      }
+    ],
+    "priority": 1,
+    "is_active": true,
+    "created_at": "2026-10-14T03:51:42.431482+00:00",
+    "updated_at": "2026-10-14T03:51:42.431482+00:00"
+  }
+]

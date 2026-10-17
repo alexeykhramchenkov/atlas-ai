@@ -14,6 +14,9 @@ def apply_template(
 ) -> str:
     template_name = rule.get("template_name")
 
+    if template_name == "compact_text":
+        return _render_compact(rule, data or {}, request or {}, language)
+
     if template_name == "top_product_stock":
         return _render_key_value(
             title=rule.get("title_template") or template_name,
@@ -64,7 +67,6 @@ def _render_ranking_list(
     if not rows:
         return config.get("empty_text") or "Данных не найдено."
 
-    limit = int(request.get("limit") or data.get("meta", {}).get("limit") or len(rows))
     title = _render_text_template(
         rule.get("title_template") or config.get("title_template") or "Рейтинг:",
         data=data,
@@ -75,7 +77,7 @@ def _render_ranking_list(
 
     lines = [title, ""]
 
-    for index, row in enumerate(rows[:limit], start=1):
+    for index, row in enumerate(rows, start=1):
         lines.append(_render_ranking_item(index=index, row=row, fields=item_fields, language=language))
 
     summary_template = config.get("summary_template")
@@ -190,6 +192,7 @@ def _render_text_template(
     top_row: dict[str, Any],
 ) -> str:
     values = {
+        **{key:value for key,value in data.items() if not isinstance(value,(dict,list))},
         "period_days": request.get("period_days") or data.get("period_days"),
         "top_product": top_row.get("product_key") or top_row.get("title") or top_row.get("product_name"),
     }
@@ -205,3 +208,69 @@ def _extract_optional_path(data: Any, path: str) -> Any:
         return extract_path(data, path)
     except (KeyError, IndexError, TypeError, ValueError):
         return None
+
+
+def _render_compact(rule, data, request, language):
+    from datetime import date
+    config = _extract_template_config(rule)
+    status = data.get('status') or 'ok'
+    if status != 'ok':
+        return (config.get('status_text') or {}).get(status, config.get('empty_text') or 'Недостаточно данных.')
+    def value(path, source=data):
+        if path.startswith('request.'):
+            return _extract_optional_path(request, path.removeprefix('request.'))
+        return _extract_optional_path(source, path)
+    values = {}
+    for field in rule.get('fields') or []:
+        if field.get('path') and field.get('label'):
+            values[field['label']] = format_value(value=value(field['path']), formatter=field.get('formatter') or 'text', language=language, options=field.get('options'))
+    months = ('января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря')
+    values['period']=config.get('default_period','')
+    for name, prefix in (('period', ''), ('previous_period', 'previous_')):
+        if not data.get(prefix+'date_from') or not data.get(prefix+'date_to'):
+            continue
+        start,end=date.fromisoformat(data[prefix+'date_from']),date.fromisoformat(data[prefix+'date_to'])
+        values[name]=(f"{start.day}–{end.day} {months[end.month-1]}" if (start.year,start.month)==(end.year,end.month)
+                          else f"{start.day} {months[start.month-1]} {start.year} — {end.day} {months[end.month-1]} {end.year}")
+    def noun(n):
+        n=int(n);return 'заказ' if n%10==1 and n%100!=11 else 'заказа' if n%10 in (2,3,4) and n%100 not in (12,13,14) else 'заказов'
+    if data.get('orders_count') is not None: values['orders_word']=noun(data['orders_count'])
+    # Cancellation wording is configured by the existing answer rule, including omission at zero.
+    cancelled_path=config.get('cancelled_path') or 'cancelled_orders_count'
+    cancelled=value(cancelled_path) or 0
+    values['cancelled_count']=format_value(value=cancelled,formatter='number',language=language)
+    values['cancellation_line']=(config.get('cancellation_template') or '').format(**values) if cancelled else ''
+    rows = value(config.get('rows_path') or 'rows') or []
+    items=[]
+    for row in rows:
+        row_values={}
+        for field in config.get('item_fields') or []:
+            row_values[field['name']]=format_value(value=value(field['path'],row),formatter=field.get('formatter') or 'text',language=language)
+        if row.get('value') is not None:row_values['orders_word']=noun(row['value'])
+        row_cancelled=row.get('cancelled_orders_count') or 0
+        row_values['cancelled_count']=format_value(value=row_cancelled,formatter='number',language=language)
+        row_values['cancellation_note']=(config.get('item_cancellation_template') or '').format(**row_values) if row_cancelled else ''
+        if config.get('item_template'):items.append(config['item_template'].format(**row_values))
+    values['items']='\n'.join(items)
+    for section in config.get('sections') or []:
+        section_items = []
+        for row in value(section['rows_path']) or []:
+            item = {field['name']:format_value(value=value(field['path'], row),
+                    formatter=field.get('formatter', 'text'), language=language, options=field.get('options'))
+                    for field in section['item_fields']}
+            section_items.append(section['item_template'].format(**item))
+        values[section['name']] = '\n'.join(section_items) or section.get('empty_text', '')
+    if rows and rows[0].get('value') is not None:
+        n=int(rows[0]['value'])
+        values['times_word']='раз' if n%10==1 and n%100!=11 or n%10 not in (2,3,4) or n%100 in (12,13,14) else 'раза'
+    values['region_count']=str(len(rows))
+    if config.get('item_template') and not rows:
+        return config.get('empty_text') or 'Заказов за этот период нет.'
+    complete = bool(rows) and sum(float(x.get('value') or 0) for x in rows)==data.get('orders_count')
+    values['region_intro']=(config.get('complete_intro') if complete else config.get('partial_intro')) or ''
+    values['region_intro']=values['region_intro'].format(**values)
+    equal=bool(rows) and all(x.get('value')==rows[0].get('value') for x in rows)
+    values['summary']=(config.get('equal_summary') if equal else config.get('ranked_summary')) or ''
+    status=data.get('status') or 'ok'
+    if status!='ok':return (config.get('status_text') or {}).get(status,config.get('empty_text') or 'Недостаточно данных.')
+    return str(rule.get('title_template') or '').format(**values).strip()

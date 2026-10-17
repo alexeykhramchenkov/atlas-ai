@@ -59,7 +59,7 @@ def parse_date(value: Any) -> Optional[date]:
             return None
 
 
-def fetch_variant_snapshots(snapshot_date: Optional[str] = None, batch_size: int = 1000) -> List[Dict[str, Any]]:
+def fetch_variant_snapshots(snapshot_date: Optional[str] = None, batch_size: int = 1000, *, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     offset = 0
 
@@ -68,7 +68,7 @@ def fetch_variant_snapshots(snapshot_date: Optional[str] = None, batch_size: int
             supabase
             .table(SOURCE_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .order("snapshot_date")
             .range(offset, offset + batch_size - 1)
         )
@@ -88,7 +88,7 @@ def fetch_variant_snapshots(snapshot_date: Optional[str] = None, batch_size: int
     return rows
 
 
-def fetch_products() -> Dict[str, Dict[str, Any]]:
+def fetch_products( *, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> Dict[str, Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     offset = 0
     batch_size = 1000
@@ -100,7 +100,7 @@ def fetch_products() -> Dict[str, Dict[str, Any]]:
             .select(
                 "product_key,marketplace_product_id,title,brand,subject_id,subject_name,category_name,seller_sku"
             )
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .order("product_key")
             .range(offset, offset + batch_size - 1)
             .execute()
@@ -235,14 +235,16 @@ def run_snapshot_job(
     state: Optional[Dict[str, Any]],
     registry_entry: Dict[str, Any],
 ) -> Dict[str, Any]:
+    user_id, shop_id = int(job["user_id"]), int(job["shop_id"])
+    marketplace = job.get("marketplace") or MARKETPLACE
     snapshot_date = job.get("date_to") or job.get("date_from") or date.today().isoformat()
 
     print("Fetching stock variant snapshots...")
-    variant_snapshots = fetch_variant_snapshots(snapshot_date=snapshot_date)
+    variant_snapshots = fetch_variant_snapshots(snapshot_date=snapshot_date, user_id=user_id, shop_id=shop_id, marketplace=marketplace)
     print(f"Stock variant snapshots fetched: {len(variant_snapshots)}")
 
     print("Fetching products...")
-    products_by_key = fetch_products()
+    products_by_key = fetch_products(user_id=user_id, shop_id=shop_id, marketplace=marketplace)
     print(f"Products fetched: {len(products_by_key)}")
 
     snapshots = build_snapshots(variant_snapshots, products_by_key)

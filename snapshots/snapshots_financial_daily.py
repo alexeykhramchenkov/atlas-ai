@@ -51,7 +51,7 @@ def safe_div(part: float, total: float) -> float:
     return round(part / total, 2)
 
 
-def fetch_realization_metrics(batch_size: int = BATCH_SIZE) -> list[dict[str, Any]]:
+def fetch_realization_metrics(batch_size: int = BATCH_SIZE, *, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     offset = 0
 
@@ -60,7 +60,7 @@ def fetch_realization_metrics(batch_size: int = BATCH_SIZE) -> list[dict[str, An
             supabase
             .table(SOURCE_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .order("snapshot_date", desc=False)
             .order("product_key", desc=False)
             .order("id", desc=False)
@@ -83,7 +83,7 @@ def fetch_realization_metrics(batch_size: int = BATCH_SIZE) -> list[dict[str, An
     return rows
 
 
-def fetch_product_costs(batch_size: int = BATCH_SIZE) -> list[dict[str, Any]]:
+def fetch_product_costs(batch_size: int = BATCH_SIZE, *, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     offset = 0
 
@@ -92,7 +92,7 @@ def fetch_product_costs(batch_size: int = BATCH_SIZE) -> list[dict[str, Any]]:
             supabase
             .table(COSTS_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .eq("is_active", True)
             .order("product_key", desc=False)
             .order("effective_from", desc=False)
@@ -141,12 +141,12 @@ def build_cost_index(cost_rows: list[dict[str, Any]]) -> dict[tuple[Any, Any, st
 def find_cost_price(
     cost_index: dict[tuple[Any, Any, str, str], list[dict[str, Any]]],
     metric_row: dict[str, Any],
-) -> float:
+) -> float | None:
     product_key = metric_row.get("product_key")
     snapshot_date = parse_date(metric_row.get("snapshot_date"))
 
     if not product_key or not snapshot_date:
-        return 0.0
+        return None
 
     key = (
         metric_row.get("user_id"),
@@ -156,7 +156,7 @@ def find_cost_price(
     )
     cost_rows = cost_index.get(key, [])
 
-    matched_cost = 0.0
+    matched_cost = None
     for cost_row in cost_rows:
         effective_from = parse_date(cost_row.get("effective_from"))
         effective_to = parse_date(cost_row.get("effective_to"))
@@ -201,6 +201,8 @@ def build_financial_snapshot_row(
     seller_payout = to_float(metric_row.get("seller_payout"))
 
     cost_price = find_cost_price(cost_index, metric_row)
+    if cost_price is None:
+        return None
     cogs_amount = round(net_sales_count * cost_price, 2)
 
     marketplace_expense_amount = round(
@@ -231,7 +233,7 @@ def build_financial_snapshot_row(
         "sales_amount": sales_amount,
         "returns_amount": returns_amount,
         "net_sales_amount": net_sales_amount,
-        "cost_price": cost_price if cost_price else None,
+        "cost_price": cost_price,
         "cogs_amount": cogs_amount,
         "commission_amount": commission_amount,
         "logistics_amount": logistics_amount,
@@ -296,12 +298,16 @@ def run_snapshot_job(
     state: dict[str, Any] | None,
     registry_entry: dict[str, Any],
 ) -> dict[str, Any]:
+    user_id, shop_id = job.get("user_id"), job.get("shop_id")
+    marketplace = job.get("marketplace") or MARKETPLACE
+    if user_id is None or shop_id is None:
+        raise ValueError("Complete tenant context is required")
     print("Fetching realization metrics...")
-    metric_rows = fetch_realization_metrics()
+    metric_rows = fetch_realization_metrics(user_id=user_id,shop_id=shop_id,marketplace=marketplace)
     print(f"Realization metrics fetched: {len(metric_rows)}")
 
     print("Fetching product costs...")
-    cost_rows = fetch_product_costs()
+    cost_rows = fetch_product_costs(user_id=user_id,shop_id=shop_id,marketplace=marketplace)
     print(f"Product costs fetched: {len(cost_rows)}")
 
     financial_rows = build_financial_snapshots(metric_rows=metric_rows, cost_rows=cost_rows)

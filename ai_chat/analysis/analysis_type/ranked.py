@@ -15,6 +15,48 @@ class AnalysisRuleNotFoundError(Exception):
 
 
 def run(request: dict, supabase) -> dict:
+    from ai_chat.metric import seller_questions
+    if seller_questions.handles(request):
+        return seller_questions.run(request, supabase)
+    if (request.get("metric") == "orders_count" and request.get("question_type") == "simple"
+            and request.get("entity") == "region" and request.get("answer_scope") == "top"):
+        from collections import Counter
+        from ai_chat.internal_tools.get_orders import get_orders, IncompleteOrdersError
+        from ai_chat.internal_tools.get_seller_facts import get_seller_facts
+        from ai_chat.analysis.analysis_type.rank import run as rank
+        product_key = request.get("product_key")
+        context = {"dataset":"orders","analysis":request.get("analysis","best"),
+                   "metric":"orders_count","entity":"region","rows":[]}
+        if not product_key:
+            return {**context,"status":"no_product"}
+        dates = {"start_date":request.get("date_from"),"end_date":request.get("date_to")}
+        if not any(dates.values()):
+            dates = {"period_days":request.get("period_days",7)}
+        try:
+            facts = get_orders(user_id=request["user_id"],shop_id=request["shop_id"],
+                marketplace=request.get("marketplace","wb"),product_key=product_key,supabase=supabase,**dates)
+        except IncompleteOrdersError as error:
+            return {**context,"status":"incomplete","date_from":error.start_date,"date_to":error.end_date}
+        start,end = facts["start_date"],facts["end_date"]
+        events = get_seller_facts(supabase,request,"order_events",start,end)
+        counts,cancellations,seen = Counter(),Counter(),set()
+        for row in events:
+            if row.get("product_key") != product_key or row["srid"] in seen:
+                continue
+            seen.add(row["srid"])
+            region=(row.get("country_name") or "Страна не указана",row.get("region_name") or "Регион не указан")
+            counts[region]+=1
+            if row.get("is_cancel"):cancellations[region]+=1
+        rows=[{"country_name":country,"region_name":region,"value":n,
+               "cancelled_orders_count":cancellations[(country,region)]}
+              for (country,region),n in sorted(counts.items())]
+        ranked=rank(rows=rows,metric="value",direction="desc",limit=int(request.get("limit",5)))
+        product=next(iter(facts["products"]),request.get("product") or {"product_key":product_key})
+        from datetime import date
+        return {**context,"status":"ok","date_from":start,"date_to":end,
+                "period_days":(date.fromisoformat(end)-date.fromisoformat(start)).days+1,
+                "product":product,"rows":ranked["rows"],"orders_count":sum(counts.values()),
+                "cancelled_orders_count":sum(cancellations.values())}
     metric = request.get("metric")
     analysis = request.get("analysis") or "ranked"
     entity = request.get("entity") or "product"
@@ -43,7 +85,7 @@ def run(request: dict, supabase) -> dict:
 
     if should_enrich_products(request=request):
         try:
-            sorted_rows = enrich_products(rows=sorted_rows, supabase=supabase)
+            sorted_rows = enrich_products(rows=sorted_rows,supabase=supabase,user_id=request['user_id'],shop_id=request['shop_id'],marketplace=request.get('marketplace','wb'))
         except Exception:
             pass
 
@@ -111,6 +153,24 @@ def get_analysis_rule(supabase, metric: str, analysis: str, entity: str) -> dict
 
 def fetch_rows(request: dict, supabase, config: dict) -> dict:
     table = config["table"]
+    if table in {"metrics_stocks_daily","metrics_stocks_variants_daily"}:
+        from ai_chat.internal_tools.get_stocks import get_stocks, StockDataUnavailableError
+        try:
+            facts=get_stocks(user_id=request["user_id"],shop_id=request["shop_id"],marketplace=request.get("marketplace","wb"),
+                product_key=request.get("product_key"),variant_key=request.get("variant_key"),warehouse_key=request.get("warehouse_key"),
+                as_of=request.get("as_of") or request.get("snapshot_date"),level="variant" if table.endswith("variants_daily") else "product",supabase=supabase)
+        except StockDataUnavailableError as error:
+            return {"rows":[],"meta":{"latest_snapshot_date":error.as_of}}
+        return {"rows":[{**row,"snapshot_date":facts["as_of"],"quantity":row["total_quantity"]} for row in facts["products"]],
+                "meta":{"latest_snapshot_date":facts["as_of"],"latest_snapshot_only":True,"date_filter_mode":"latest_snapshot"}}
+    if table == "metrics_funnel_daily":
+        from ai_chat.internal_tools.get_funnel import get_funnel
+        dates={"start_date":request.get("date_from"),"end_date":request.get("date_to")}
+        if not any(dates.values()):dates={"period_days":request.get("period_days",30)}
+        facts=get_funnel(user_id=request["user_id"],shop_id=request["shop_id"],
+            marketplace=request.get("marketplace","wb"),product_key=request.get("product_key"),
+            supabase=supabase,**dates)
+        return {"rows":facts["products"],"meta":{"date_from":facts["start_date"],"date_to":facts["end_date"]}}
     date_field = config.get("date_field", "snapshot_date")
     select_fields = config.get("select", "*")
     period_days = int(request.get("period_days", DEFAULT_PERIOD_DAYS))
@@ -225,7 +285,15 @@ def get_latest_snapshot_date(
 
 def group_rows(rows: list[dict], config: dict) -> list[dict]:
     group_by = config.get("group_by", "product_key")
-    value_field = config["value_field"]
+    if group_by == []:
+        from decimal import Decimal
+        field = config.get("value_field")
+        if not rows: return []
+        total = len(rows) if config.get("aggregation") == "count" else sum((Decimal(str(row[field])) for row in rows), Decimal(0))
+        value = int(total) if total == int(total) else float(total)
+        return [{"value":value, **({field:value} if field else {})}]
+    aggregation = config.get("aggregation") or "sum"
+    value_field = config.get("value_field")
     value_alias = config.get("value_alias")
     revenue_field = config.get("revenue_field")
     group_fields = config.get("group_fields") or [group_by]
@@ -234,7 +302,7 @@ def group_rows(rows: list[dict], config: dict) -> list[dict]:
     groups: dict[str, dict[str, Any]] = {}
 
     for row in rows:
-        group_key = row.get(group_by)
+        group_key = tuple(row.get(field) for field in group_by) if isinstance(group_by,list) else row.get(group_by)
 
         if not group_key:
             continue
@@ -247,7 +315,10 @@ def group_rows(rows: list[dict], config: dict) -> list[dict]:
             for field in group_fields:
                 groups[group_key][field] = row.get(field)
 
-        groups[group_key]["value"] += safe_float(row.get(value_field))
+        if aggregation == "count":
+            groups[group_key]["value"] += 1.0
+        else:
+            groups[group_key]["value"] += safe_float(row.get(value_field))
 
         if value_field:
             groups[group_key][value_field] = groups[group_key]["value"]

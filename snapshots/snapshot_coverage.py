@@ -81,7 +81,11 @@ def fetch_distinct_dates(
         response = query.execute()
         rows = response.data or []
 
-        result.update(normalize_dates(row.get(date_column) for row in rows))
+        if table_name == "normalized_orders" and date_column == "order_date":
+            from core.dates import moscow_date
+            result.update(day for row in rows if (day := moscow_date(row.get(date_column))) is not None)
+        else:
+            result.update(normalize_dates(row.get(date_column) for row in rows))
 
         if len(rows) < batch_size:
             break

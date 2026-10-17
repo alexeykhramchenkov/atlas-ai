@@ -30,26 +30,10 @@ def to_float(value: Any, default: float = 0) -> float:
         return default
 
 
-def parse_date(value: Any) -> Optional[date]:
-    if value is None or value == "":
-        return None
-
-    if isinstance(value, date) and not isinstance(value, datetime):
-        return value
-
-    if isinstance(value, datetime):
-        return value.date()
-
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).date()
-    except ValueError:
-        try:
-            return datetime.strptime(str(value)[:10], "%Y-%m-%d").date()
-        except ValueError:
-            return None
+from core.dates import moscow_date as parse_date, moscow_midnight
 
 
-def fetch_orders_for_dates(dates_to_build: List[date]) -> List[Dict[str, Any]]:
+def fetch_orders_for_dates(dates_to_build: List[date], *, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> List[Dict[str, Any]]:
     if not dates_to_build:
         return []
 
@@ -66,9 +50,9 @@ def fetch_orders_for_dates(dates_to_build: List[date]) -> List[Dict[str, Any]]:
             supabase
             .table(SOURCE_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
-            .gte("order_date", start_date.isoformat())
-            .lt("order_date", end_date_exclusive.isoformat())
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
+            .gte("order_date", moscow_midnight(start_date))
+            .lt("order_date", moscow_midnight(end_date_exclusive))
             .order("order_date")
             .range(offset, offset + batch_size - 1)
             .execute()
@@ -89,7 +73,7 @@ def fetch_orders_for_dates(dates_to_build: List[date]) -> List[Dict[str, Any]]:
     return rows
 
 
-def fetch_products_by_key() -> Dict[str, Dict[str, Any]]:
+def fetch_products_by_key(*, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> Dict[str, Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     offset = 0
     batch_size = 1000
@@ -102,7 +86,7 @@ def fetch_products_by_key() -> Dict[str, Dict[str, Any]]:
                 "user_id,shop_id,marketplace,product_key,marketplace_product_id,"
                 "brand,title,subject_id,subject_name,category_name,seller_sku"
             )
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .order("product_key")
             .range(offset, offset + batch_size - 1)
             .execute()
@@ -123,7 +107,7 @@ def fetch_products_by_key() -> Dict[str, Dict[str, Any]]:
     }
 
 
-def fetch_variants() -> List[Dict[str, Any]]:
+def fetch_variants(*, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     offset = 0
     batch_size = 1000
@@ -136,7 +120,7 @@ def fetch_variants() -> List[Dict[str, Any]]:
                 "user_id,shop_id,marketplace,product_key,marketplace_product_id,"
                 "variant_key,marketplace_variant_id,size_name,seller_sku"
             )
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .order("product_key")
             .range(offset, offset + batch_size - 1)
             .execute()
@@ -315,6 +299,15 @@ def build_snapshots(
     if not dates_to_build:
         return []
 
+    # Historical order variants can be absent from today's catalog. Seed their
+    # zero days too, so moving an order to its Moscow day clears the old day.
+    variants = list(variants)
+    known = {(row.get("product_key"), row.get("variant_key")) for row in variants}
+    for row in orders:
+        identity = (row.get("product_key"), row.get("variant_key"))
+        if all(identity) and identity not in known:
+            variants.append(row)
+            known.add(identity)
     groups = build_base_groups(products_by_key, variants, dates_to_build)
 
     regions: Dict[Tuple[Any, Any, str, str, str, date], Set[str]] = defaultdict(set)
@@ -369,15 +362,23 @@ def run_snapshot_job(
     state: Optional[Dict[str, Any]],
     registry_entry: Dict[str, Any],
 ) -> Dict[str, Any]:
+    user_id, shop_id = job.get("user_id"), job.get("shop_id")
+    marketplace = job.get("marketplace") or MARKETPLACE
+    if user_id is None or shop_id is None:
+        raise ValueError("Complete tenant context is required")
     print("Resolving order variants snapshot coverage...")
     dates_to_build = get_dates_to_build(
         normalized_table=SOURCE_TABLE,
         normalized_date_column="order_date",
         snapshot_table=TARGET_TABLE,
         snapshot_date_column="snapshot_date",
-        marketplace=MARKETPLACE,
-        repair_days=REPAIR_DAYS,
+        marketplace=marketplace,
+        repair_days=REPAIR_DAYS, user_id=user_id, shop_id=shop_id,
     )
+    if job.get("date_from") and job.get("date_to"):
+        first = date.fromisoformat(str(job["date_from"])[:10])
+        last = date.fromisoformat(str(job["date_to"])[:10])
+        dates_to_build = [first + timedelta(days=i) for i in range((last-first).days+1)]
     print_dates_to_build(dates_to_build)
 
     if not dates_to_build:
@@ -389,15 +390,15 @@ def run_snapshot_job(
         }
 
     print("Fetching normalized orders for selected dates...")
-    orders = fetch_orders_for_dates(dates_to_build)
+    orders = fetch_orders_for_dates(dates_to_build,user_id=user_id,shop_id=shop_id,marketplace=marketplace)
     print(f"Normalized orders fetched: {len(orders)}")
 
     print("Fetching products...")
-    products_by_key = fetch_products_by_key()
+    products_by_key = fetch_products_by_key(user_id=user_id,shop_id=shop_id,marketplace=marketplace)
     print(f"Products fetched: {len(products_by_key)}")
 
     print("Fetching variants...")
-    variants = fetch_variants()
+    variants = fetch_variants(user_id=user_id,shop_id=shop_id,marketplace=marketplace)
     print(f"Variants fetched: {len(variants)}")
 
     snapshots = build_snapshots(orders, products_by_key, variants, dates_to_build)

@@ -122,7 +122,7 @@ def collect_aliases(rule: dict[str, Any]) -> list[str]:
 
 
 def normalize_text(value: str) -> str:
-    return " ".join(str(value).lower().replace("_", " ").split())
+    return " ".join(str(value).lower().replace("ё", "е").replace("_", " ").split())
 
 
 def metric_match_to_dict(match: MetricMatch | None) -> dict[str, Any]:

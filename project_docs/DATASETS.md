@@ -85,7 +85,9 @@
 
 * `variant` — `UNKNOWN` для Orders AI Chat
 * `warehouse` — не относится к Orders
-* `region` — `UNKNOWN`
+* `region` — поддержан для `best/worst.orders_count` через группировку
+  `normalized_orders.region_name`; `orders_count` считает созданные заказы,
+  включая отменённые, как и основной контракт заказов.
 
 ### Analysis
 

@@ -9,7 +9,7 @@ DEFAULT_PERIOD_DAYS = 30
 MAX_PERIOD_DAYS = 365
 
 
-def resolve_period_days(question: str) -> int:
+def resolve_period_days(question: str, default_period_days: int = DEFAULT_PERIOD_DAYS) -> int:
     text = question.lower()
 
     explicit = extract_period_days(text)
@@ -34,7 +34,7 @@ def resolve_period_days(question: str) -> int:
     if contains_any(text, ["год", "year"]):
         return 365
 
-    return DEFAULT_PERIOD_DAYS
+    return default_period_days
 
 
 def extract_period_days(text: str) -> int | None:

@@ -4,6 +4,9 @@ Voice-to-Text
 Input Normalizer
 чистит хаос, опечатки, длинные фразы
 
+LLM Router Fallback
+используется только после детерминированного router и возвращает JSON по строгой schema
+
 Context Resolver
 понимает "они", "этот товар", "как раньше"
 
@@ -39,6 +42,9 @@ Action Engine
 
 Answer Builder
 пишет человеческий ответ
+
+LLM Answer Interpreter
+переводит готовый structured result в текст, не получает доступ к базе и не считает метрики
 
 Memory Writer
 запоминает контекст диалога

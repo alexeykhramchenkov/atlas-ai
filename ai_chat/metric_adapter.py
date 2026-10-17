@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -121,29 +122,14 @@ def _compare_funnel_metrics(
         raise ValueError(f"Unsupported funnel compare metrics: {unsupported_metrics}")
 
     period_days = _safe_period_days(period_days)
-    rows = get_funnel(
-        supabase=supabase,
-        user_id=user_id,
-        shop_id=shop_id,
-        marketplace=marketplace,
-        period_days=period_days,
-        product_key=product_key,
-        latest_only=False,
-    )
-    latest_date = _latest_date(rows)
-
-    if latest_date is None:
-        return {
-            metric: _empty_compare(metric=metric, period_days=period_days)
-            for metric in metrics
-        }
-
+    latest_date = datetime.now(ZoneInfo("Europe/Moscow")).date() - timedelta(days=1)
     current_from = latest_date - timedelta(days=period_days - 1)
     previous_to = current_from - timedelta(days=1)
     previous_from = previous_to - timedelta(days=period_days - 1)
-
-    current_rows = _filter_period(rows, current_from, latest_date)
-    previous_rows = _filter_period(rows, previous_from, previous_to)
+    common=dict(supabase=supabase,user_id=user_id,shop_id=shop_id,
+                marketplace=marketplace,product_key=product_key)
+    current_rows=get_funnel(**common,start_date=current_from.isoformat(),end_date=latest_date.isoformat())["products"]
+    previous_rows=get_funnel(**common,start_date=previous_from.isoformat(),end_date=previous_to.isoformat())["products"]
 
     return {
         metric: _build_compare_result(
@@ -211,47 +197,27 @@ def _compare_orders(
     product_key: str | None,
 ) -> dict:
     period_days = _safe_period_days(period_days)
-    latest_rows = get_orders(
-        user_id=user_id,
-        shop_id=shop_id,
-        marketplace=marketplace,
-        product_key=product_key,
-        latest_only=True,
-        supabase=supabase,
-    )
-    latest_date = _latest_date(latest_rows)
-
-    if latest_date is None:
-        return _empty_compare(metric="orders", period_days=period_days)
-
+    current_data = get_orders(user_id=user_id,shop_id=shop_id,marketplace=marketplace,
+                              product_key=product_key,period_days=period_days,supabase=supabase)
+    latest_date = date.fromisoformat(current_data["end_date"])
     current_from = latest_date - timedelta(days=period_days - 1)
     previous_to = current_from - timedelta(days=1)
     previous_from = previous_to - timedelta(days=period_days - 1)
 
-    current_rows = get_orders(
+    current_rows = current_data["products"]
+    previous_data = get_orders(
         user_id=user_id,
         shop_id=shop_id,
         marketplace=marketplace,
-        period_days=period_days,
         product_key=product_key,
-        latest_only=False,
-        supabase=supabase,
-        start_date=current_from.isoformat(),
-        end_date=latest_date.isoformat(),
-    )
-    previous_rows = get_orders(
-        user_id=user_id,
-        shop_id=shop_id,
-        marketplace=marketplace,
-        period_days=period_days,
-        product_key=product_key,
-        latest_only=False,
         supabase=supabase,
         start_date=previous_from.isoformat(),
         end_date=previous_to.isoformat(),
     )
-    current = sum(_safe_float(row.get("orders_count")) for row in current_rows)
-    previous = sum(_safe_float(row.get("orders_count")) for row in previous_rows)
+    previous_rows = previous_data["products"]
+
+    current = current_data["orders_count"]
+    previous = previous_data["orders_count"]
 
     return {
         "metric": "orders",
@@ -313,16 +279,16 @@ def _get_metric_state(
     if metric != "stock":
         raise ValueError(f"Unsupported state metric: {metric}")
 
-    rows = get_stocks(
+    facts = get_stocks(
         supabase=supabase,
         user_id=user_id,
         shop_id=shop_id,
         marketplace=marketplace,
         product_key=product_key,
         level="product",
-        latest_only=True,
     )
-    value = sum(_safe_float(row.get("total_quantity")) for row in rows)
+    rows=facts["products"]
+    value=facts["total_quantity"]
 
     return {
         "metric": metric,
@@ -331,7 +297,7 @@ def _get_metric_state(
         "status": _stock_status(value=value, rows=rows),
         "meta": {
             "source_tool": "get_stocks",
-            "snapshot_date": _latest_snapshot_value(rows),
+            "snapshot_date": facts["as_of"],
             "rows_count": len(rows),
         },
     }
@@ -389,52 +355,24 @@ def _find_contributors(
         raise ValueError(f"Unsupported contributors scope: {scope}")
 
     period_days = _safe_period_days(period_days)
-    latest_rows = get_orders(
-        user_id=user_id,
-        shop_id=shop_id,
-        marketplace=marketplace,
-        latest_only=True,
-        supabase=supabase,
-    )
-    latest_date = _latest_date(latest_rows)
-
-    if latest_date is None:
-        return {
-            "metric": metric,
-            "view": "contributors",
-            "scope": scope,
-            "direction": direction,
-            "rows": [],
-            "meta": {
-                "source_tool": "get_orders",
-                "rows_count": 0,
-            },
-        }
-
+    current_data = get_orders(user_id=user_id,shop_id=shop_id,marketplace=marketplace,
+                              product_key=product_key,period_days=period_days,supabase=supabase)
+    latest_date = date.fromisoformat(current_data["end_date"])
     current_from = latest_date - timedelta(days=period_days - 1)
     previous_to = current_from - timedelta(days=1)
     previous_from = previous_to - timedelta(days=period_days - 1)
 
-    current_rows = get_orders(
+    current_rows = current_data["products"]
+    previous_data = get_orders(
         user_id=user_id,
         shop_id=shop_id,
         marketplace=marketplace,
-        period_days=period_days,
-        latest_only=False,
-        supabase=supabase,
-        start_date=current_from.isoformat(),
-        end_date=latest_date.isoformat(),
-    )
-    previous_rows = get_orders(
-        user_id=user_id,
-        shop_id=shop_id,
-        marketplace=marketplace,
-        period_days=period_days,
-        latest_only=False,
         supabase=supabase,
         start_date=previous_from.isoformat(),
         end_date=previous_to.isoformat(),
     )
+    previous_rows = previous_data["products"]
+
 
     current_by_key = {row["product_key"]: row for row in current_rows if row.get("product_key")}
     previous_by_key = {row["product_key"]: row for row in previous_rows if row.get("product_key")}
@@ -457,7 +395,7 @@ def _find_contributors(
 
     reverse = direction != "negative"
     rows = sorted(rows, key=lambda row: row["change_abs"], reverse=reverse)
-    rows = enrich_products(rows=rows[:limit], supabase=supabase)
+    rows = enrich_products(rows=rows[:limit],supabase=supabase,user_id=user_id,shop_id=shop_id,marketplace=marketplace)
 
     return {
         "metric": metric,
@@ -529,25 +467,16 @@ def _get_product_price_context(
     shop_id: int,
     marketplace: str,
 ) -> dict:
-    response = (
-        supabase
-        .table("normalized_prices")
-        .select("snapshot_date,base_price,final_price,discount_percent")
-        .eq("user_id", user_id)
-        .eq("shop_id", shop_id)
-        .eq("marketplace", marketplace)
-        .eq("product_key", product_key)
-        .order("snapshot_date", desc=True)
-        .limit(1)
-        .execute()
-    )
-    row = (response.data or [{}])[0]
-
-    return {
-        "price_with_discount": _nullable_float(row.get("final_price")),
-        "base_price": _nullable_float(row.get("base_price")),
-        "discount_percent": _nullable_float(row.get("discount_percent")),
-    }
+    from ai_chat.internal_tools.get_prices import get_prices
+    from ai_chat.internal_tools._common import DataUnavailableError
+    try:
+        rows=get_prices(user_id,shop_id,marketplace,product_key=product_key,supabase=supabase)['prices']
+    except DataUnavailableError:
+        rows=[]
+    def one(field):
+        values={r.get(field) for r in rows}
+        return next(iter(values)) if len(values)==1 else None
+    return {'price_with_discount':one('final_price'),'base_price':one('base_price'),'discount_percent':one('discount_percent')}
 
 
 def _get_product_stock_context(
@@ -565,7 +494,6 @@ def _get_product_stock_context(
         marketplace=marketplace,
         product_key=product_key,
         level="product",
-        latest_only=True,
     )
     variant_rows = get_stocks(
         supabase=supabase,
@@ -574,14 +502,13 @@ def _get_product_stock_context(
         marketplace=marketplace,
         product_key=product_key,
         level="variant",
-        latest_only=True,
     )
-    product_row = product_rows[0] if product_rows else {}
-    size_state = _build_size_stock_state(variant_rows)
+    product_row=next(iter(product_rows["products"]),{})
+    size_state=_build_size_stock_state(variant_rows["products"])
 
     return {
         "stock_qty": _nullable_float(product_row.get("total_quantity")),
-        "stock_qty_full": _nullable_float(product_row.get("total_quantity_full")),
+        "stock_qty_full": _nullable_float(product_row.get("total_quantity")),
         "sizes_in_stock_count": len(size_state["sizes_in_stock"]),
         "total_sizes_count": len(size_state["all_sizes"]),
         "sizes_in_stock": size_state["sizes_in_stock"],
@@ -597,18 +524,13 @@ def _get_product_reviews_context(
     shop_id: int,
     marketplace: str,
 ) -> dict:
-    feedbacks_response = (
-        supabase
-        .table("normalized_feedbacks")
-        .select("rating,pros,cons,text,tags")
-        .eq("user_id", user_id)
-        .eq("shop_id", shop_id)
-        .eq("marketplace", marketplace)
-        .eq("product_key", product_key)
-        .order("created_at", desc=True)
-        .execute()
-    )
-    feedback_rows = feedbacks_response.data or []
+    from ai_chat.internal_tools.get_reviews import get_reviews
+    from ai_chat.internal_tools._common import DataUnavailableError
+    try:
+        feedback_rows=get_reviews(user_id,shop_id,marketplace,product_key=product_key,period_days=30,supabase=supabase)['reviews']
+    except DataUnavailableError:
+        return {'rating':None,'total_reviews_count':None,'positive_reviews_count':None,
+                'negative_reviews_count':None,'negative_review_snippets':[],'positive_review_snippets':[]}
 
     return {
         "rating": _average_rating(feedback_rows),
@@ -682,8 +604,8 @@ def _build_size_stock_state(rows: list[dict]) -> dict:
                 "stock_qty_full": 0.0,
             },
         )
-        size["stock_qty"] += _safe_float(row.get("quantity"))
-        size["stock_qty_full"] += _safe_float(row.get("quantity_full"))
+        size["stock_qty"] += _safe_float(row.get("total_quantity"))
+        size["stock_qty_full"] += _safe_float(row.get("total_quantity"))
 
     all_sizes = sorted(by_size)
     sizes_in_stock = sorted(

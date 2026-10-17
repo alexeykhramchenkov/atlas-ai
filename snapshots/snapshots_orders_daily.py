@@ -20,6 +20,18 @@ BATCH_SIZE = 100
 REPAIR_DAYS = 7
 
 
+def require_tenant_context(job: Dict[str, Any]) -> Tuple[int, int, str]:
+    missing = [field for field in ("user_id", "shop_id") if job.get(field) is None]
+    if missing:
+        raise ValueError(f"Orders snapshot job missing tenant context: {', '.join(missing)}")
+
+    return (
+        int(job["user_id"]),
+        int(job["shop_id"]),
+        str(job.get("marketplace") or MARKETPLACE),
+    )
+
+
 def to_float(value: Any, default: float = 0) -> float:
     if value is None or value == "":
         return default
@@ -29,23 +41,16 @@ def to_float(value: Any, default: float = 0) -> float:
         return default
 
 
-def parse_date(value: Any) -> Optional[date]:
-    if value is None or value == "":
-        return None
-
-    if isinstance(value, date) and not isinstance(value, datetime):
-        return value
-
-    if isinstance(value, datetime):
-        return value.date()
-
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).date()
-    except ValueError:
-        return None
+from core.dates import moscow_date as parse_date, moscow_midnight
 
 
-def fetch_orders_for_dates(dates_to_build: List[date]) -> List[Dict[str, Any]]:
+def fetch_orders_for_dates(
+    dates_to_build: List[date],
+    *,
+    user_id: int,
+    shop_id: int,
+    marketplace: str,
+) -> List[Dict[str, Any]]:
     if not dates_to_build:
         return []
 
@@ -62,9 +67,11 @@ def fetch_orders_for_dates(dates_to_build: List[date]) -> List[Dict[str, Any]]:
             supabase
             .table(SOURCE_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
-            .gte("order_date", start_date.isoformat())
-            .lt("order_date", end_date_exclusive.isoformat())
+            .eq("user_id", user_id)
+            .eq("shop_id", shop_id)
+            .eq("marketplace", marketplace)
+            .gte("order_date", moscow_midnight(start_date))
+            .lt("order_date", moscow_midnight(end_date_exclusive))
             .order("order_date")
             .range(offset, offset + batch_size - 1)
             .execute()
@@ -102,7 +109,12 @@ def build_group_key(row: Dict[str, Any]) -> Optional[Tuple[Any, Any, str, str, d
 
 
 
-def fetch_active_products() -> List[Dict[str, Any]]:
+def fetch_active_products(
+    *,
+    user_id: int,
+    shop_id: int,
+    marketplace: str,
+) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     offset = 0
     batch_size = 1000
@@ -115,7 +127,9 @@ def fetch_active_products() -> List[Dict[str, Any]]:
                 "user_id,shop_id,marketplace,product_key,marketplace_product_id,"
                 "brand,title,subject_id,subject_name,category_name,seller_sku"
             )
-            .eq("marketplace", MARKETPLACE)
+            .eq("user_id", user_id)
+            .eq("shop_id", shop_id)
+            .eq("marketplace", marketplace)
             .order("product_key")
             .range(offset, offset + batch_size - 1)
             .execute()
@@ -318,16 +332,26 @@ def run_snapshot_job(
     state: Optional[Dict[str, Any]],
     registry_entry: Dict[str, Any],
 ) -> Dict[str, Any]:
+    user_id, shop_id, marketplace = require_tenant_context(job)
+
     print("Resolving order snapshot coverage...")
     dates_to_build = get_dates_to_build(
         normalized_table=SOURCE_TABLE,
         normalized_date_column="order_date",
         snapshot_table=TARGET_TABLE,
         snapshot_date_column="snapshot_date",
-        marketplace=MARKETPLACE,
+        user_id=user_id,
+        shop_id=shop_id,
+        marketplace=marketplace,
         repair_days=REPAIR_DAYS,
     )
     print_dates_to_build(dates_to_build)
+
+    # A bounded repair job rebuilds its whole period, including old corrected orders.
+    if job.get("date_from") and job.get("date_to"):
+        first = date.fromisoformat(str(job["date_from"])[:10])
+        last = date.fromisoformat(str(job["date_to"])[:10])
+        dates_to_build = [first + timedelta(days=i) for i in range((last-first).days+1)]
 
     if not dates_to_build:
         print("No order snapshots to build")
@@ -338,11 +362,20 @@ def run_snapshot_job(
         }
 
     print("Fetching normalized orders for selected dates...")
-    orders = fetch_orders_for_dates(dates_to_build)
+    orders = fetch_orders_for_dates(
+        dates_to_build,
+        user_id=user_id,
+        shop_id=shop_id,
+        marketplace=marketplace,
+    )
     print(f"Normalized orders fetched: {len(orders)}")
 
     print("Fetching active products...")
-    active_products = fetch_active_products()
+    active_products = fetch_active_products(
+        user_id=user_id,
+        shop_id=shop_id,
+        marketplace=marketplace,
+    )
     print(f"Active products fetched: {len(active_products)}")
 
     snapshots = build_snapshots(orders, active_products, dates_to_build)
@@ -370,8 +403,20 @@ def run_snapshot_job(
 
 
 def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Build tenant-scoped order snapshots")
+    parser.add_argument("--user-id", type=int, required=True)
+    parser.add_argument("--shop-id", type=int, required=True)
+    parser.add_argument("--marketplace", default=MARKETPLACE)
+    args = parser.parse_args()
+
     result = run_snapshot_job(
-        job={},
+        job={
+            "user_id": args.user_id,
+            "shop_id": args.shop_id,
+            "marketplace": args.marketplace,
+        },
         state=None,
         registry_entry={},
     )

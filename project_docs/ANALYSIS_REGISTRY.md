@@ -457,3 +457,15 @@ Planned:
 Analysis определяет логику системы.
 
 Metric, Scope, Entity и Period являются параметрами анализа, а не самостоятельными сущностями.
+## 2026-10-17: общий разбор покупательских текстов (тест)
+
+Новых публичных типов анализа не добавлено. Внутренние вычисления:
+- text_annotation.annotate(items, topics): семантические аспекты по готовым текстам,
+  без доступа к базе. Только в фоновом runner.
+- persisted_topics.summarize(rows, source_type, sentiment): уникальные ID по темам,
+  готовность обработки, сортировка через существующий rank. Без DB/LLM.
+
+Повторные фрагменты одной темы/тональности в одном тексте объединяются; источник
+внутри темы считается один раз. source_type review/question использует один алгоритм.
+
+2026-10-17: risk_check retired from active dispatch. Stock replenishment now uses existing metric_value/rank over days_left, get_stocks/get_orders, filter and rank. Default pace window 30 completed days; urgency threshold 7 days. Legacy source is archived under setup/retired-risk-check only.

@@ -34,6 +34,8 @@ class Settings:
     shopify_scopes: str
     token_encryption_key: str | None
     oauth_state_ttl_seconds: int
+    openai_api_key: str | None
+    openai_model: str
     environment: str = "local"
     log_level: str = "INFO"
 
@@ -68,6 +70,8 @@ settings = Settings(
     oauth_state_ttl_seconds=int(
         _get_optional_env("OAUTH_STATE_TTL_SECONDS", "600") or "600"
     ),
+    openai_api_key=_get_optional_env("OPENAI_API_KEY"),
+    openai_model=_get_optional_env("OPENAI_MODEL", "gpt-5-mini") or "gpt-5-mini",
     environment=_get_optional_env("ENVIRONMENT", "local") or "local",
     log_level=_get_optional_env("LOG_LEVEL", "INFO") or "INFO",
 )
@@ -87,5 +91,7 @@ SHOPIFY_REDIRECT_URI = settings.shopify_redirect_uri
 SHOPIFY_SCOPES = settings.shopify_scopes
 TOKEN_ENCRYPTION_KEY = settings.token_encryption_key
 OAUTH_STATE_TTL_SECONDS = settings.oauth_state_ttl_seconds
+OPENAI_API_KEY = settings.openai_api_key
+OPENAI_MODEL = settings.openai_model
 ENVIRONMENT = settings.environment
 LOG_LEVEL = settings.log_level

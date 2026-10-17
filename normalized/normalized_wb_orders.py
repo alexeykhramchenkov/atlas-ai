@@ -12,7 +12,6 @@ from db.client import supabase
 SOURCE_TABLE = "raw_wb_orders"
 TARGET_TABLE = "normalized_orders"
 MARKETPLACE = "wb"
-DEFAULT_USER_ID = 1
 
 BATCH_SIZE = 100
 
@@ -97,8 +96,11 @@ def build_normalized_order(raw_row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not isinstance(payload, dict):
         return None
 
-    user_id = to_int(raw_row.get("user_id")) or DEFAULT_USER_ID
-    shop_id = to_int(raw_row.get("shop_id")) or user_id
+    user_id = to_int(raw_row.get("user_id"))
+    shop_id = to_int(raw_row.get("shop_id"))
+
+    if user_id is None or shop_id is None:
+        return None
 
     srid = clean_text(payload_value(payload, "srid", default=raw_row.get("srid")))
     g_number = clean_text(payload_value(payload, "gNumber", "g_number"))
@@ -240,7 +242,7 @@ def upsert_orders(rows: List[Dict[str, Any]]) -> int:
             .table(TARGET_TABLE)
             .upsert(
                 batch,
-                on_conflict="marketplace,srid",
+                on_conflict="user_id,shop_id,marketplace,srid",
             )
             .execute()
         )

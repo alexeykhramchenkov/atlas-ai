@@ -1,0 +1,130 @@
+[
+  {
+    "id": 6,
+    "question_type": "simple",
+    "template_name": "compact_text",
+    "language": "ru",
+    "title_template": "За неделю у тебя {count} {orders_word} 🎉\nОтменённые не учитываю.\n\nПериод:\n{period}",
+    "fields": [
+      {
+        "match": {
+          "entity": "store",
+          "metric": "net_orders",
+          "dataset": "orders",
+          "analysis": "metric_value"
+        }
+      },
+      {
+        "template": {
+          "status_text": {
+            "no_data": "За эту неделю заказов не найдено.",
+            "incomplete": "Пока не хватает данных за полную неделю. Сначала загрузим заказы магазина.",
+            "no_product": "Сначала спроси: какой товар лучший?"
+          }
+        }
+      },
+      {
+        "path": "net_orders",
+        "label": "count",
+        "formatter": "number"
+      }
+    ],
+    "priority": 5,
+    "is_active": true,
+    "created_at": "2026-10-14T02:33:39.637535+00:00",
+    "updated_at": "2026-10-14T02:33:39.637535+00:00"
+  },
+  {
+    "id": 7,
+    "question_type": "simple",
+    "template_name": "compact_text",
+    "language": "ru",
+    "title_template": "Лучше всего заказывали этот товар 👑\n\n{title}\nАртикул WB: {article}\nЗаказали {count} {times_word}\n\nПериод:\n{period}",
+    "fields": [
+      {
+        "match": {
+          "entity": "product",
+          "metric": "net_orders",
+          "dataset": "orders",
+          "analysis": "best"
+        }
+      },
+      {
+        "template": {
+          "status_text": {
+            "no_data": "За эту неделю заказов не найдено.",
+            "incomplete": "Пока не хватает данных за полную неделю. Сначала загрузим заказы магазина.",
+            "no_product": "Сначала спроси: какой товар лучший?"
+          }
+        }
+      },
+      {
+        "path": "rows.0.title",
+        "label": "title",
+        "formatter": "text"
+      },
+      {
+        "path": "rows.0.marketplace_product_id",
+        "label": "article",
+        "formatter": "text"
+      },
+      {
+        "path": "rows.0.value",
+        "label": "count",
+        "formatter": "number"
+      }
+    ],
+    "priority": 5,
+    "is_active": true,
+    "created_at": "2026-10-14T02:33:39.637535+00:00",
+    "updated_at": "2026-10-14T02:33:39.637535+00:00"
+  },
+  {
+    "id": 8,
+    "question_type": "simple",
+    "template_name": "compact_text",
+    "language": "ru",
+    "title_template": "{region_intro} 📍\n\n{items}\n\n{summary}",
+    "fields": [
+      {
+        "match": {
+          "entity": "region",
+          "metric": "net_orders",
+          "dataset": "orders",
+          "analysis": "best"
+        }
+      },
+      {
+        "template": {
+          "rows_path": "rows",
+          "empty_text": "За эту неделю этот товар не заказывали.",
+          "item_fields": [
+            {
+              "name": "region",
+              "path": "region_name"
+            },
+            {
+              "name": "count",
+              "path": "value",
+              "formatter": "number"
+            }
+          ],
+          "status_text": {
+            "no_data": "За эту неделю заказов не найдено.",
+            "incomplete": "Пока не хватает данных за полную неделю. Сначала загрузим заказы магазина.",
+            "no_product": "Сначала спроси: какой товар лучший?"
+          },
+          "equal_summary": "Все эти регионы на первом месте.",
+          "item_template": "{region} — {count} {orders_word}",
+          "partial_intro": "Чаще всего этот товар заказывали из этих регионов",
+          "complete_intro": "Этот товар заказывали из {region_count} регионов",
+          "ranked_summary": "Регионы показаны по числу заказов, от большего к меньшему."
+        }
+      }
+    ],
+    "priority": 5,
+    "is_active": true,
+    "created_at": "2026-10-14T02:33:39.637535+00:00",
+    "updated_at": "2026-10-14T02:33:39.637535+00:00"
+  }
+]

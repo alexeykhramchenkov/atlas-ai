@@ -83,6 +83,18 @@ def resolve_product(
         ):
             best_match = fuzzy_match
 
+    if best_match is None:
+        # A distinctive inflected title token can identify exactly one catalog product.
+        # Common words matching multiple products never select an arbitrary product.
+        stems = {simple_stem(t) for t in content_tokens(normalized_question)
+                 if len(simple_stem(t)) >= 5}
+        candidates = [p for p in products if stems.intersection(
+            simple_stem(t) for t in content_tokens(p.get('title') or ''))]
+        if len(candidates) == 1:
+            best_match = {**candidates[0], 'match_type':'fuzzy_title',
+                          'matched_text':candidates[0].get('title'), 'score':0,
+                          'matched_tokens':sorted(stems.intersection(
+                              simple_stem(t) for t in content_tokens(candidates[0].get('title') or '')))}
     return best_match
 
 
@@ -93,27 +105,8 @@ def load_products(
     shop_id: int,
     marketplace: str,
 ) -> list[dict[str, Any]]:
-    response = (
-        supabase
-        .table(PRODUCTS_TABLE)
-        .select(
-            """
-            product_key,
-            title,
-            brand,
-            seller_sku,
-            subject_name,
-            main_photo_url,
-            marketplace_product_id
-            """
-        )
-        .eq("user_id", user_id)
-        .eq("shop_id", shop_id)
-        .eq("marketplace", marketplace)
-        .execute()
-    )
-
-    return response.data or []
+    from ai_chat.internal_tools.get_products import get_products
+    return get_products(user_id,shop_id,marketplace,supabase=supabase)['products']
 
 
 def collect_product_aliases(product: dict[str, Any]) -> list[Any]:

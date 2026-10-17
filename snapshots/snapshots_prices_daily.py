@@ -59,7 +59,7 @@ def parse_datetime(value: Any) -> datetime:
         return datetime.min
 
 
-def fetch_prices_for_dates(dates_to_build: List[date]) -> List[Dict[str, Any]]:
+def fetch_prices_for_dates(dates_to_build: List[date], *, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> List[Dict[str, Any]]:
     if not dates_to_build:
         return []
 
@@ -76,7 +76,7 @@ def fetch_prices_for_dates(dates_to_build: List[date]) -> List[Dict[str, Any]]:
             supabase
             .table(SOURCE_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .gte("snapshot_date", start_date.isoformat())
             .lt("snapshot_date", end_date_exclusive.isoformat())
             .order("snapshot_date")
@@ -202,6 +202,8 @@ def run_snapshot_job(
     state: Optional[Dict[str, Any]],
     registry_entry: Dict[str, Any],
 ) -> Dict[str, Any]:
+    user_id, shop_id = int(job["user_id"]), int(job["shop_id"])
+    marketplace = job.get("marketplace") or MARKETPLACE
     print("Resolving prices daily snapshot coverage...")
     dates_to_build = get_dates_to_build(
         normalized_table=SOURCE_TABLE,
@@ -209,7 +211,7 @@ def run_snapshot_job(
         snapshot_table=TARGET_TABLE,
         snapshot_date_column="snapshot_date",
         marketplace=MARKETPLACE,
-        repair_days=REPAIR_DAYS,
+        repair_days=REPAIR_DAYS, user_id=user_id, shop_id=shop_id,
     )
     print_dates_to_build(dates_to_build)
 
@@ -222,7 +224,7 @@ def run_snapshot_job(
         }
 
     print("Fetching normalized prices for selected dates...")
-    prices = fetch_prices_for_dates(dates_to_build)
+    prices = fetch_prices_for_dates(dates_to_build, user_id=user_id, shop_id=shop_id, marketplace=marketplace)
     print(f"Normalized prices fetched: {len(prices)}")
 
     snapshots = build_snapshots(prices)

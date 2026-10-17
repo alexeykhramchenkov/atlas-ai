@@ -46,7 +46,7 @@ def parse_date(value: Any) -> Optional[date]:
             return None
 
 
-def fetch_realization_for_dates(dates_to_build: List[date]) -> List[Dict[str, Any]]:
+def fetch_realization_for_dates(dates_to_build: List[date], *, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> List[Dict[str, Any]]:
     if not dates_to_build:
         return []
 
@@ -63,7 +63,7 @@ def fetch_realization_for_dates(dates_to_build: List[date]) -> List[Dict[str, An
             supabase
             .table(SOURCE_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .gte("event_time", start_date.isoformat())
             .lt("event_time", end_date_exclusive.isoformat())
             .order("event_time", desc=False)
@@ -208,12 +208,12 @@ def apply_realization_row(item: Dict[str, Any], row: Dict[str, Any]) -> None:
     retail_amount = amount_abs(payload_value(payload, "retail_amount", "retail_amount_withdisc_rub"))
     return_amount = amount_abs(payload_value(payload, "return_amount"))
     ppvz_for_pay = to_float(payload_value(payload, "ppvz_for_pay"))
-    ppvz_vw = amount_abs(payload_value(payload, "ppvz_vw"))
-    ppvz_sales_commission = amount_abs(payload_value(payload, "ppvz_sales_commission"))
-    commission_amount = ppvz_sales_commission or ppvz_vw
+    ppvz_vw = to_float(payload_value(payload, "ppvz_vw"))
+    commission_value = payload_value(payload, "ppvz_sales_commission")
+    commission_amount = to_float(commission_value) if commission_value is not None else ppvz_vw
     acquiring_fee = amount_abs(payload_value(payload, "acquiring_fee"))
-    delivery_rub = amount_abs(payload_value(payload, "delivery_rub"))
-    storage_fee = amount_abs(payload_value(payload, "storage_fee"))
+    delivery_rub = to_float(payload_value(payload, "delivery_rub", "deliveryService"))
+    storage_fee = to_float(payload_value(payload, "storage_fee", "paidStorage"))
     penalty = amount_abs(payload_value(payload, "penalty"))
     deduction = amount_abs(payload_value(payload, "deduction"))
     acceptance = amount_abs(payload_value(payload, "acceptance"))
@@ -234,11 +234,11 @@ def apply_realization_row(item: Dict[str, Any], row: Dict[str, Any]) -> None:
 
     if supplier_oper_name in {"продажа", "возврат", "sale", "return"}:
         if commission_amount:
-            item["wb_commission_amount"] += commission_amount
+            item["wb_commission_amount"] += -commission_amount if is_return(row) else commission_amount
         if acquiring_fee:
             item["acquiring_amount"] += acquiring_fee
 
-    if supplier_oper_name in {"логистика", "коррекция логистики"}:
+    if supplier_oper_name in {"логистика", "доставка", "коррекция логистики"}:
         if delivery_rub:
             item["logistics_amount"] += delivery_rub
 
@@ -363,6 +363,8 @@ def run_snapshot_job(
     state: Optional[Dict[str, Any]],
     registry_entry: Dict[str, Any],
 ) -> Dict[str, Any]:
+    user_id, shop_id = int(job["user_id"]), int(job["shop_id"])
+    marketplace = job.get("marketplace") or MARKETPLACE
     print("Resolving realization daily snapshot coverage...")
     dates_to_build = get_dates_to_build(
         normalized_table=SOURCE_TABLE,
@@ -370,7 +372,7 @@ def run_snapshot_job(
         snapshot_table=TARGET_TABLE,
         snapshot_date_column="snapshot_date",
         marketplace=MARKETPLACE,
-        repair_days=REPAIR_DAYS,
+        repair_days=REPAIR_DAYS, user_id=user_id, shop_id=shop_id,
     )
     print_dates_to_build(dates_to_build)
 
@@ -383,7 +385,7 @@ def run_snapshot_job(
         }
 
     print("Fetching normalized realization for selected dates...")
-    realization_rows = fetch_realization_for_dates(dates_to_build)
+    realization_rows = fetch_realization_for_dates(dates_to_build, user_id=user_id, shop_id=shop_id, marketplace=marketplace)
     print(f"Normalized realization rows fetched: {len(realization_rows)}")
 
     snapshots = build_snapshots(realization_rows)

@@ -1,89 +1,17 @@
+"""Recorded finance and marketplace-expense facts. No invented cost or profit."""
+from ._common import tenant_query,pages,period,sum_rows,product_titles,DataUnavailableError
+PROFIT_FIELDS=('sales_count','returns_count','net_sales_count','sales_amount','returns_amount','net_sales_amount','cogs_amount','marketplace_expense_amount','commission_amount','logistics_amount','storage_amount','acquiring_amount','deduction_amount','gross_profit','net_profit')
+EXPENSE_FIELDS=('wb_commission_amount','logistics_amount','storage_amount','acquiring_amount','penalty_amount','deduction_amount','acceptance_amount','other_income_amount','other_expense_amount','seller_payout','total_income_amount','total_expense_amount','gross_margin_before_cost','wb_net_result','compensation_amount','reimbursement_amount')
 
-
-from supabase import Client
-
-
-def get_profit(
-    supabase: Client,
-    user_id: int,
-    shop_id: int,
-    marketplace: str = "wb",
-    period_days: int = 30,
-    product_key: str | None = None,
-    latest_only: bool = True,
-):
-    """
-    Read profit and financial metrics from metrics_financial_daily.
-
-    Parameters:
-        supabase: Supabase client
-        user_id: User ID
-        shop_id: Shop ID
-        marketplace: Marketplace name
-        period_days: Reserved for future history queries
-        product_key: Optional product filter
-        latest_only: If True returns only latest snapshot rows
-    """
-
-    query = (
-        supabase
-        .table("metrics_financial_daily")
-        .select(
-            """
-            snapshot_date,
-            product_key,
-            marketplace_product_id,
-            sales_count,
-            returns_count,
-            net_sales_count,
-            sales_amount,
-            returns_amount,
-            net_sales_amount,
-            cogs_amount,
-            marketplace_expense_amount,
-            commission_amount,
-            logistics_amount,
-            storage_amount,
-            acquiring_amount,
-            deduction_amount,
-            gross_profit,
-            net_profit,
-            gross_margin_pct,
-            net_margin_pct,
-            expense_rate_pct,
-            commission_rate_pct,
-            logistics_rate_pct,
-            storage_rate_pct,
-            acquiring_rate_pct,
-            deduction_rate_pct,
-            profit_growth_1d_pct,
-            profit_growth_7d_pct,
-            profit_growth_30d_pct,
-            net_sales_growth_1d_pct,
-            net_sales_growth_7d_pct,
-            net_sales_growth_30d_pct,
-            source_type
-            """
-        )
-        .eq("user_id", user_id)
-        .eq("shop_id", shop_id)
-        .eq("marketplace", marketplace)
-        .order("snapshot_date", desc=True)
-    )
-
-    if product_key:
-        query = query.eq("product_key", product_key)
-
-    response = query.execute()
-    rows = response.data or []
-
-    if latest_only and rows:
-        latest_date = rows[0]["snapshot_date"]
-        rows = [row for row in rows if row["snapshot_date"] == latest_date]
-
-    return rows
-
-
-if __name__ == "__main__":
-    print("get_profit tool")
-    print("Ready")
+def get_profit(user_id,shop_id,marketplace='wb',product_key=None,period_days=None,start_date=None,end_date=None,view='profit',*,supabase=None):
+    if view not in {'profit','expenses'}:raise ValueError('view must be profit or expenses')
+    start,end=period(period_days,start_date,end_date)
+    table='metrics_financial_daily' if view=='profit' else 'metrics_realization_daily'
+    fields=PROFIT_FIELDS if view=='profit' else EXPENSE_FIELDS
+    q=tenant_query(supabase,table,'id,snapshot_date,product_key,'+','.join(fields),user_id,shop_id,marketplace)
+    if product_key is not None:q=q.eq('product_key',product_key)
+    rows=pages(q.gte('snapshot_date',start).lte('snapshot_date',end).order('snapshot_date').order('product_key').order('id'))
+    if not rows:raise DataUnavailableError('No recorded finance facts')
+    totals,products=sum_rows(rows,fields,['product_key'],integer_fields=("sales_count","returns_count","net_sales_count"),signed_fields=fields,optional_fields=fields)
+    products=product_titles(supabase,products,user_id,shop_id,marketplace)
+    return {'start_date':start,'end_date':end,'view':view,**totals,'products':products}

@@ -1,121 +1,91 @@
+"""Single tenant-bound stock reader. Quantities include both movement directions."""
+from datetime import date
+from decimal import Decimal, InvalidOperation
+
+PAGE_SIZE = 1000
 
 
-from supabase import Client
+from ._common import DataUnavailableError
 
 
-PRODUCT_SELECT = """
-snapshot_date,
-product_key,
-marketplace_product_id,
-seller_sku,
-total_quantity,
-total_quantity_full,
-total_in_way_to_client,
-total_in_way_from_client,
-total_stock_value,
-variants_count,
-warehouses_count,
-avg_stock_value_per_unit,
-stock_available_share_pct,
-stock_in_way_to_client_share_pct,
-stock_in_way_from_client_share_pct,
-stock_growth_1d_pct,
-available_stock_growth_1d_pct,
-stock_value_growth_1d_pct,
-stock_growth_7d_pct,
-stock_value_growth_7d_pct,
-stock_growth_30d_pct,
-stock_value_growth_30d_pct
-"""
+class StockDataUnavailableError(DataUnavailableError):
+    def __init__(self, as_of=None):
+        self.as_of = as_of
+        super().__init__(f"Stock facts are unavailable for requested selection at {as_of}")
 
 
-VARIANT_SELECT = """
-snapshot_date,
-product_key,
-marketplace_product_id,
-variant_key,
-marketplace_variant_id,
-size_name,
-seller_sku,
-warehouse_key,
-warehouse_name,
-quantity,
-quantity_full,
-in_way_to_client,
-in_way_from_client,
-stock_value,
-avg_stock_value_per_unit,
-stock_available_share_pct,
-stock_in_way_to_client_share_pct,
-stock_in_way_from_client_share_pct,
-stock_growth_1d_pct,
-available_stock_growth_1d_pct,
-stock_value_growth_1d_pct,
-stock_growth_7d_pct,
-stock_value_growth_7d_pct,
-stock_growth_30d_pct,
-stock_value_growth_30d_pct
-"""
-
-
-def get_stocks(
-    supabase: Client,
-    user_id: int,
-    shop_id: int,
-    marketplace: str = "wb",
-    period_days: int = 30,
-    product_key: str | None = None,
-    variant_key: str | None = None,
-    level: str = "product",
-    latest_only: bool = True,
-):
-    """
-    Read stock metrics from metrics_stocks_daily or metrics_stocks_variants_daily.
-
-    Parameters:
-        supabase: Supabase client
-        user_id: User ID
-        shop_id: Shop ID
-        marketplace: Marketplace name
-        period_days: Reserved for future history queries
-        product_key: Optional product filter
-        variant_key: Optional variant filter, used only for level='variant'
-        level: 'product' for product aggregate, 'variant' for size/warehouse detail
-        latest_only: If True returns only latest snapshot rows
-    """
-
+def get_stocks(user_id, shop_id, marketplace="wb", product_key=None,
+               variant_key=None, warehouse_key=None, as_of=None, level="product", *, supabase=None):
+    if supabase is None or not user_id or not shop_id or not marketplace:
+        raise ValueError("Database and complete tenant context are required")
     if level not in {"product", "variant"}:
-        raise ValueError("level must be 'product' or 'variant'")
-
-    table_name = "metrics_stocks_daily" if level == "product" else "metrics_stocks_variants_daily"
-    select_fields = PRODUCT_SELECT if level == "product" else VARIANT_SELECT
-
-    query = (
-        supabase
-        .table(table_name)
-        .select(select_fields)
-        .eq("user_id", user_id)
-        .eq("shop_id", shop_id)
-        .eq("marketplace", marketplace)
-        .order("snapshot_date", desc=True)
-    )
-
-    if product_key:
-        query = query.eq("product_key", product_key)
-
-    if level == "variant" and variant_key:
-        query = query.eq("variant_key", variant_key)
-
-    response = query.execute()
-    rows = response.data or []
-
-    if latest_only and rows:
-        latest_date = rows[0]["snapshot_date"]
-        rows = [row for row in rows if row["snapshot_date"] == latest_date]
-
-    return rows
-
-
-if __name__ == "__main__":
-    print("get_stocks tool")
-    print("Ready")
+        raise ValueError("level must be product or variant")
+    if variant_key is not None and level != "variant":
+        raise ValueError("variant_key requires variant detail")
+    if as_of is not None:
+        as_of = date.fromisoformat(as_of).isoformat()
+    variant_source = level == "variant" or warehouse_key is not None
+    table = "snapshots_stocks_variants_daily" if variant_source else "metrics_stocks_daily"
+    def query(table_name, fields):
+        return (supabase.table(table_name).select(fields).eq("user_id",user_id)
+                .eq("shop_id",shop_id).eq("marketplace",marketplace))
+    # Use one store snapshot, never an older date selected separately per product.
+    if as_of is None:
+        latest = query(table,"snapshot_date").order("snapshot_date",desc=True).limit(1).execute().data or []
+        if not latest:
+            raise StockDataUnavailableError()
+        as_of = str(latest[0]["snapshot_date"])[:10]
+    fields = ("id,product_key,variant_key,size_name,warehouse_key,warehouse_name,quantity,in_way_to_client,in_way_from_client"
+              if variant_source else "id,product_key,total_quantity,total_in_way_to_client,total_in_way_from_client")
+    source=[];offset=0
+    while True:
+        q=query(table,fields).eq("snapshot_date",as_of)
+        for key,value in (("product_key",product_key),("variant_key",variant_key),("warehouse_key",warehouse_key)):
+            if value is not None:q=q.eq(key,value)
+        batch=q.order("product_key").order("id").range(offset,offset+PAGE_SIZE-1).execute().data or []
+        source.extend(batch)
+        if len(batch)<PAGE_SIZE:break
+        offset+=PAGE_SIZE
+    if not source:
+        raise StockDataUnavailableError(as_of)
+    products={}
+    for row in source:
+        pk=row.get("product_key")
+        if not pk:raise ValueError("Stock fact lacks product_key")
+        key=(pk,row.get("variant_key"),row.get("warehouse_key")) if level=="variant" else (pk,)
+        item=products.setdefault(key,{"product_key":pk,"title":None,"warehouse_quantity":0,
+                                      "to_customer_quantity":0,"from_customer_quantity":0,"total_quantity":0})
+        if level=="variant":
+            for name in ("variant_key","size_name","warehouse_key","warehouse_name"):item[name]=row.get(name)
+        columns = (("quantity","in_way_to_client","in_way_from_client") if variant_source else
+                   ("total_quantity","total_in_way_to_client","total_in_way_from_client"))
+        for dest,column in zip(("warehouse_quantity","to_customer_quantity","from_customer_quantity"),columns):
+            value=row.get(column)
+            if value is None or isinstance(value,bool):raise ValueError(f"Missing stock fact: {column}")
+            try:number=Decimal(str(value))
+            except InvalidOperation:raise ValueError(f"Invalid stock fact: {column}") from None
+            if not number.is_finite() or number<0 or number!=number.to_integral_value():
+                raise ValueError(f"Invalid stock fact: {column}")
+            item[dest]+=int(number)
+        item["total_quantity"]=item["warehouse_quantity"]+item["to_customer_quantity"]+item["from_customer_quantity"]
+    keys=sorted({item["product_key"] for item in products.values()})
+    names={};sizes={}
+    for index in range(0,len(keys),200):
+        batch_keys=keys[index:index+200];offset=0
+        from .get_products import get_products
+        catalog=get_products(user_id,shop_id,marketplace,product_keys=batch_keys,supabase=supabase)['products']
+        names.update({row['product_key']:row.get('title') for row in catalog})
+        if level=="variant" and any(not item.get("size_name") for item in products.values() if item["product_key"] in batch_keys):
+            offset=0
+            while True:
+                batch=(query("normalized_product_variants","id,product_key,variant_key,size_name").in_("product_key",batch_keys)
+                       .order("product_key").order("id").range(offset,offset+PAGE_SIZE-1).execute().data or [])
+                sizes.update({(row["product_key"],row["variant_key"]):row.get("size_name") for row in batch})
+                if len(batch)<PAGE_SIZE:break
+                offset+=PAGE_SIZE
+    rows=list(products.values())
+    for item in rows:
+        item["title"]=names.get(item["product_key"])
+        if level=="variant":item["size_name"]=item.get("size_name") or sizes.get((item["product_key"],item.get("variant_key")))
+    return {"as_of":as_of,**{field:sum(item[field] for item in rows)
+            for field in ("warehouse_quantity","to_customer_quantity","from_customer_quantity","total_quantity")},"products":rows}

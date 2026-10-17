@@ -40,7 +40,7 @@ def to_float(value: Any, default: float = 0) -> float:
         return default
 
 
-def fetch_normalized_stocks(batch_size: int = 1000) -> List[Dict[str, Any]]:
+def fetch_normalized_stocks(batch_size: int = 1000, *, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     offset = 0
 
@@ -49,7 +49,7 @@ def fetch_normalized_stocks(batch_size: int = 1000) -> List[Dict[str, Any]]:
             supabase
             .table(SOURCE_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .order("id")
             .range(offset, offset + batch_size - 1)
             .execute()
@@ -142,10 +142,12 @@ def run_snapshot_job(
     state: Optional[Dict[str, Any]],
     registry_entry: Dict[str, Any],
 ) -> Dict[str, Any]:
+    user_id, shop_id = int(job["user_id"]), int(job["shop_id"])
+    marketplace = job.get("marketplace") or MARKETPLACE
     snapshot_date = job.get("date_to") or job.get("date_from") or date.today().isoformat()
 
     print("Fetching normalized stocks...")
-    normalized_stocks = fetch_normalized_stocks()
+    normalized_stocks = fetch_normalized_stocks(user_id=user_id, shop_id=shop_id, marketplace=marketplace)
     print(f"Normalized stocks fetched: {len(normalized_stocks)}")
 
     snapshots = [build_snapshot_row(row, snapshot_date) for row in normalized_stocks]

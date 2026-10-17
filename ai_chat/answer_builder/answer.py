@@ -1,6 +1,8 @@
 import json
 from typing import Any
 
+from core.config import settings
+from ai_chat.llm_client import generate_openai_json
 from ai_chat.answer_builder.explain_change import build_explain_change_answer
 from ai_chat.answer_builder.fields import extract_fields
 from ai_chat.answer_builder.resolver import resolve_answer_rule
@@ -17,6 +19,47 @@ def build_answer(
     language: str | None = None,
 ) -> str:
     payload = execution_result if execution_result is not None else result
+
+    # Prefer the existing rule table for any explicitly supplied execution context.
+    # No stock/order-specific formatting or calculations in this path.
+    if supabase is not None and (payload is not None or (request or {}).get('is_valid_question') is False):
+        rule=resolve_answer_rule(supabase=supabase,
+            question_type=(request or {}).get("question_type") or "simple",
+            language=language or (request or {}).get("language") or "ru",request=request or {},result=payload)
+        if rule is not None:
+            fields=extract_fields(data=payload or {},field_rules=rule.get("fields") or [],language=language or "ru")
+            return apply_template(rule=rule,fields=fields,language=language or "ru",data=payload or {},request=request or {})
+
+    from ai_chat.routing.seller_questions import BY_METRIC
+    if request and request.get("is_valid_question") is False and request.get("error_code") == "unsupported_metric":
+        rule = resolve_answer_rule(supabase=_resolve_rules_supabase(supabase), question_type="simple",
+            language=language or "ru", request=request, result={})
+        if rule:
+            return apply_template(rule=rule,fields=[],language=language or "ru",data={},request=request)
+        return "Этот расчёт пока не поддерживается."
+    if request and request.get("metric") in BY_METRIC and request.get("date_from") and request.get("date_to"):
+        rule = resolve_answer_rule(supabase=_resolve_rules_supabase(supabase), question_type="simple",
+            language=language or request.get("language") or "ru", request=request, result=payload or {})
+        if not rule:
+            return "Не найдено правило оформления ответа."
+        return apply_template(rule=rule, fields=[], language=language or "ru", data=payload or {}, request=request)
+
+    if request and request.get("is_valid_question") is False and request.get("metric") == "orders_count":
+        rule = resolve_answer_rule(supabase=_resolve_rules_supabase(supabase), question_type="simple",
+            language=language or request.get("language") or "ru", request=request, result={})
+        if not rule:
+            return "Не найдено правило оформления ответа."
+        return apply_template(rule=rule, fields=[], language=language or "ru", data={}, request=request)
+
+    if (payload is not None and payload.get("metric") == "orders_count"
+            and payload.get("date_from") and payload.get("date_to")):
+        rule = resolve_answer_rule(supabase=_resolve_rules_supabase(supabase),
+            question_type=(request or {}).get("question_type") or "simple",
+            language=language or (request or {}).get("language") or "ru",
+            request=request or {}, result=payload)
+        if not rule:
+            return "Не найдено правило оформления ответа."
+        return apply_template(rule=rule, fields=[], language=language or "ru", data=payload, request=request or {})
 
     if payload is None:
         return _raw_json_answer(
@@ -51,6 +94,27 @@ def build_answer(
                 request=request,
                 result=payload,
             )
+
+    if _is_product_metric_list(request=request, result=payload):
+        return _build_product_metric_list(
+            request=request or {},
+            result=payload,
+            language=answer_language,
+        )
+
+    if _is_product_warehouse_answer(request=request, result=payload):
+        return _build_product_warehouse_answer(
+            request=request or {},
+            result=payload,
+            language=answer_language,
+        )
+
+    if _is_region_ranking_answer(result=payload):
+        return _build_region_ranking_answer(
+            request=request or {},
+            result=payload,
+            language=answer_language,
+        )
 
     rule_supabase = _resolve_rules_supabase(supabase)
     if rule_supabase is not None:
@@ -105,11 +169,48 @@ def build_answer(
                 result=payload,
             )
 
-    return _raw_json_answer(
-        question=question,
-        request=request,
-        result=payload,
+    if settings.openai_api_key:
+        try:
+            return _build_openai_grounded_answer(
+                question=question,
+                request=request or {},
+                result=payload,
+                language=answer_language,
+            )
+        except Exception:
+            pass
+
+    return _raw_json_answer(question=question, request=request, result=payload)
+
+
+def _build_openai_grounded_answer(
+    *, question: str | None,
+    request: dict[str, Any],
+    result: dict[str, Any],
+    language: str,
+) -> str:
+    facts = json.dumps(result, ensure_ascii=False, default=str)
+    prompt = f"""Write a concise Telegram answer in language {language!r}.
+Answer the user's analytics question using ONLY FACTS_JSON below.
+Do not invent, estimate, recalculate, or add any number absent from FACTS_JSON.
+If facts are insufficient, say exactly what data is missing. Do not mention JSON.
+User question: {question!r}
+FACTS_JSON: {facts}
+"""
+    response = generate_openai_json(
+        prompt=prompt,
+        schema_name="grounded_analytics_answer",
+        schema={
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {"answer": {"type": "string"}},
+            "required": ["answer"],
+        },
     )
+    answer = str(response.get("answer") or "").strip()
+    if not answer:
+        raise ValueError("OpenAI returned an empty analytics answer")
+    return answer
 
 
 def _raw_json_answer(
@@ -128,6 +229,167 @@ def _raw_json_answer(
         indent=2,
         default=str,
     )
+
+
+def _is_product_metric_list(
+    *, request: dict[str, Any] | None, result: dict[str, Any]
+) -> bool:
+    request = request or {}
+    if (request.get("entity") or result.get("entity")) != "product":
+        return False
+    if not isinstance(result.get("rows"), list):
+        return False
+    if result.get("analysis") in {"best", "worst"}:
+        return True
+    return result.get("analysis") == "metric_value" and result.get("dataset") == "stocks"
+
+
+def _build_product_metric_list(
+    *, request: dict[str, Any], result: dict[str, Any], language: str
+) -> str:
+    rows = list(result.get("rows") or [])
+    limit = max(1, int(request.get("limit") or 5))
+    metric = result.get("metric") or request.get("metric")
+
+    if result.get("dataset") == "stocks":
+        rows.sort(key=lambda row: _safe_number(row.get("stock_qty")))
+
+    lines = []
+    for row in rows[:limit]:
+        title = row.get("title") or row.get("product_name") or "Товар"
+        product_key = row.get("product_key") or "—"
+        value, unit = _product_metric_value(row=row, metric=metric, language=language)
+        lines.append(f"{title}_{product_key} - {_format_number(value)} {unit}".rstrip())
+
+    if lines:
+        return "\n".join(lines)
+    return "No data found." if language == "en" else "Данные не найдены."
+
+
+def _product_metric_value(
+    *, row: dict[str, Any], metric: str | None, language: str
+) -> tuple[Any, str]:
+    if metric in {"stock", "stock_qty", "total_stock_qty"}:
+        return row.get("stock_qty", row.get("value")), "units" if language == "en" else "шт."
+    if metric in {"revenue", "orders_revenue", "gross_order_value", "net_order_value"}:
+        value = row.get("value")
+        if value is None:
+            value = row.get("orders_revenue", row.get("gross_order_value"))
+        return value, "₽"
+    if metric == "profit":
+        return row.get("value", row.get("profit")), "₽"
+    value = row.get("orders_count")
+    if value is None:
+        value = row.get("orders", row.get("value"))
+    return value, "orders" if language == "en" else "заказов"
+
+
+def _is_product_warehouse_answer(
+    *, request: dict[str, Any] | None, result: dict[str, Any]
+) -> bool:
+    request = request or {}
+    return (
+        request.get("scope") == "product"
+        and request.get("entity") == "warehouse"
+        and result.get("entity") == "warehouse"
+        and isinstance(result.get("rows"), list)
+    )
+
+
+def _build_product_warehouse_answer(
+    *, request: dict[str, Any], result: dict[str, Any], language: str
+) -> str:
+    rows = result.get("rows") or []
+    if not rows:
+        return "No data found." if language == "en" else "Данные не найдены."
+
+    product = request.get("product") or {}
+    title = product.get("title") or "Product" if language == "en" else product.get("title") or "Товар"
+    product_key = request.get("product_key") or product.get("product_key") or "—"
+    top_row = rows[0]
+    warehouse = str(
+        top_row.get("warehouse_name")
+        or top_row.get("warehouse_key")
+        or "—"
+    ).removeprefix("wb_").replace("_", " ").title()
+    quantity = top_row.get("quantity", top_row.get("value"))
+    total_stock = product.get("stock_qty")
+
+    if language == "en":
+        lines = [
+            f"{title}_{product_key}",
+            f"Most stock is at {warehouse} — {_format_number(quantity)} units.",
+        ]
+        if total_stock is not None:
+            lines.append(f"Total product stock — {_format_number(total_stock)} units.")
+        return "\n".join(lines)
+
+    lines = [
+        f"{title}_{product_key}",
+        f"Больше всего на складе {warehouse} — {_format_number(quantity)} шт.",
+    ]
+    if total_stock is not None:
+        lines.append(f"Всего остаток товара — {_format_number(total_stock)} шт.")
+    return "\n".join(lines)
+
+
+def _is_region_ranking_answer(*, result: dict[str, Any]) -> bool:
+    return (
+        result.get("dataset") == "orders"
+        and result.get("analysis") in {"best", "worst"}
+        and result.get("entity") == "region"
+        and result.get("metric") in {"orders", "orders_count"}
+        and isinstance(result.get("rows"), list)
+    )
+
+
+def _build_region_ranking_answer(
+    *, request: dict[str, Any], result: dict[str, Any], language: str
+) -> str:
+    rows = [
+        row
+        for row in (result.get("rows") or [])
+        if _safe_number(row.get("orders_count", row.get("value"))) > 0
+    ]
+    limit = max(1, int(request.get("limit") or 5))
+    period_days = request.get("period_days") or result.get("period_days") or 30
+    product = request.get("product") or {}
+    product_key = request.get("product_key") or product.get("product_key")
+
+    if language == "en":
+        lines = []
+        if product_key:
+            lines.extend(
+                [f"{product.get('title') or 'Product'}_{product_key}", ""]
+            )
+        lines.append(f"Top order regions over the last {period_days} days:")
+    else:
+        lines = []
+        if product_key:
+            lines.extend(
+                [f"{product.get('title') or 'Товар'}_{product_key}", ""]
+            )
+        lines.append(
+            f"За последние {period_days} дней больше всего заказывали в следующих регионах:"
+        )
+
+    for row in rows[:limit]:
+        region = row.get("region_name") or "—"
+        orders = row.get("orders_count", row.get("value"))
+        unit = "orders" if language == "en" else _ru_orders_unit(orders)
+        lines.append(f"{region} - {_format_number(orders)} {unit}")
+    if rows:
+        return "\n".join(lines)
+    return "No data found." if language == "en" else "Данные не найдены."
+
+
+def _ru_orders_unit(value: Any) -> str:
+    number = int(abs(_safe_number(value)))
+    if number % 10 == 1 and number % 100 != 11:
+        return "заказ"
+    if number % 10 in {2, 3, 4} and number % 100 not in {12, 13, 14}:
+        return "заказа"
+    return "заказов"
 
 
 def _resolve_rules_supabase(supabase: Any) -> Any:

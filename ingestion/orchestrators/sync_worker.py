@@ -35,7 +35,21 @@ def get_active_connection(user_id: int, shop_id: int, marketplace: str) -> dict[
     )
 
     rows = response.data or []
-    return rows[0] if rows else None
+    if not rows:
+        return None
+    connection = rows[0]
+    if marketplace == "wb":
+        from integrations.security import decrypt_token
+        stored = (supabase.table("system_marketplace_connections")
+            .select("encrypted_api_token")
+            .eq("id", connection["connection_id"])
+            .eq("user_id", user_id).eq("shop_id", shop_id).eq("marketplace", marketplace)
+            .single().execute().data)
+        encrypted = (stored or {}).get("encrypted_api_token")
+        if not encrypted:
+            raise RuntimeError("WB connection has no encrypted credential; loading stopped")
+        connection["api_token"] = decrypt_token(encrypted)
+    return connection
 
 
 def load_sync_function(marketplace: str, source_name: str):

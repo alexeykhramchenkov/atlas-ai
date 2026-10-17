@@ -5772,3 +5772,18 @@ CREATE UNIQUE INDEX users_pkey ON public.system_users USING btree (id)
 ```sql
 CREATE UNIQUE INDEX users_tg_user_id_key ON public.system_users USING btree (tg_user_id)
 ```
+
+## Тестовое дополнение 17 октября 2026: сохранённые темы текстов
+
+Только yavpdfijnedpsobnbdtn. Выполненная миграция:
+setup/persisted-text-topics/migration.sql.
+
+- text_topics: topic_id, tenant context, title, normalized_title, category, merged_into, created_at.
+- text_analyses: analysis_id, tenant context, source_type, source_id, product_key,
+  source_created_at, text_hash, analysis_version, status, error_code, analyzed_at.
+- text_analysis_topics: analysis_id, topic_id, tenant context, summary, sentiment.
+
+Включён RLS без публичных политик, anon/authenticated не имеют табличных прав.
+Чтение/запись — только backend service_role. Межтабличные составные FK включают
+user_id/shop_id/marketplace. Удаления исходных таблиц/колонок нет.
+RPC save_text_analysis_batch — атомарное сохранение результатов, только service_role.

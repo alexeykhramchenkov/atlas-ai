@@ -36,6 +36,7 @@ def extract_fields(
                     value=value,
                     formatter=formatter,
                     language=language,
+                    options=field_rule.get("options"),
                 ),
             }
         )

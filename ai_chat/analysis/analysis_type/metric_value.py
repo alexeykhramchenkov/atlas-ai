@@ -1,6 +1,8 @@
 from importlib import import_module
 from typing import Any
 
+from ai_chat.enrichers.product import enrich_products
+
 
 RULES_TABLE = "system_metric_rules"
 ANALYSIS_NAME = "metric_value"
@@ -16,6 +18,9 @@ class MetricHandlerNotFoundError(Exception):
 
 
 def run(request: dict, supabase) -> dict:
+    from ai_chat.metric import seller_questions
+    if seller_questions.handles(request):
+        return seller_questions.run(request, supabase)
     metric = request.get("metric")
     dataset = request.get("dataset")
 
@@ -45,11 +50,14 @@ def run(request: dict, supabase) -> dict:
 
     handler = getattr(metric_module, ANALYSIS_NAME)
 
-    return handler(
+    result = handler(
         request={**request, "entity": entity},
         supabase=supabase,
         config=rule["config"],
     )
+    if entity == "product" and result.get("rows"):
+        result["rows"] = enrich_products(rows=result['rows'],supabase=supabase,user_id=request['user_id'],shop_id=request['shop_id'],marketplace=request.get('marketplace','wb'))
+    return result
 
 
 # Applies default metrics for certain datasets and metrics if not provided in request.

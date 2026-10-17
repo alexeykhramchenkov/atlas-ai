@@ -354,8 +354,10 @@ def run_sync_job(
 
     window_to = parse_job_date(job.get("date_to") or job.get("date_from"))
     lookback_days = int((rule or {}).get("repair_window_days") or DEFAULT_LOOKBACK_DAYS)
-    window_from = window_to - timedelta(days=lookback_days - 1)
-    weekly_windows = build_weekly_windows(window_from=window_from, window_to=window_to)
+    window_from = parse_job_date(job["date_from"]) if job.get("job_type") == "coverage_repair" else window_to - timedelta(days=lookback_days - 1)
+    # The current endpoint accepts the bounded period and returns actual report IDs.
+    # Keep grouping/deduplication below, without redundant overlapping weekly fetches.
+    weekly_windows = [(window_from, window_to)]
 
     loaded_report_ids = fetch_loaded_report_ids(
         user_id=user_id,

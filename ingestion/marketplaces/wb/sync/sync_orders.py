@@ -88,6 +88,7 @@ def upsert_raw_orders(
                 "srid": srid,
                 "event_date": extract_order_date(order),
                 "payload": order,
+                "updated_at": datetime.utcnow().isoformat(),
             }
         )
 
@@ -273,7 +274,8 @@ def run_sync_job(
         day_str = day.isoformat()
         days_checked += 1
 
-        if is_raw_orders_day_loaded(
+        # Repair must refresh existing days too: WB can add late cancellations.
+        if job.get("job_type") != "coverage_repair" and is_raw_orders_day_loaded(
             user_id=user_id,
             shop_id=shop_id,
             marketplace=marketplace,

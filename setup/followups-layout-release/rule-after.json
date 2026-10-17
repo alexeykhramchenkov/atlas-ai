@@ -1,0 +1,59 @@
+[
+  {
+    "id": 96,
+    "question_type": "simple",
+    "template_name": "compact_text",
+    "language": "ru",
+    "title_template": "Вопросы без ответа · {count}\n\n{items}",
+    "fields": [
+      {
+        "match": {
+          "view": "unanswered",
+          "dataset": "followups"
+        }
+      },
+      {
+        "path": "questions_count",
+        "label": "count",
+        "formatter": "number"
+      },
+      {
+        "template": {
+          "sections": [
+            {
+              "name": "items",
+              "rows_path": "rows",
+              "empty_text": "Вопросов без ответа нет.",
+              "item_fields": [
+                {
+                  "name": "title",
+                  "path": "title",
+                  "formatter": "html_text"
+                },
+                {
+                  "name": "text",
+                  "path": "question_text",
+                  "formatter": "html_text"
+                },
+                {
+                  "name": "created",
+                  "path": "question_created_at",
+                  "options": {
+                    "style": "day_month"
+                  },
+                  "formatter": "date"
+                }
+              ],
+              "item_template": "<b>{title} · {created}</b>\n• {text}\n"
+            }
+          ],
+          "telegram_format": "html_bold"
+        }
+      }
+    ],
+    "priority": -10,
+    "is_active": true,
+    "created_at": "2026-10-16T16:19:52.672303+00:00",
+    "updated_at": "2026-10-16T16:19:52.672303+00:00"
+  }
+]

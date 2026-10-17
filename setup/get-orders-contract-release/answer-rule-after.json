@@ -1,0 +1,47 @@
+{
+  "id": 7,
+  "question_type": "simple",
+  "template_name": "compact_text",
+  "language": "ru",
+  "title_template": "Чаще всего заказывали:\n\n{items}\n\nПериод: {period}",
+  "fields": [
+    {
+      "match": {
+        "entity": "product",
+        "metric": "orders_count",
+        "dataset": "orders",
+        "analysis": "best"
+      }
+    },
+    {
+      "template": {
+        "empty_text": "За выбранный период заказов не найдено.",
+        "item_fields": [
+          {
+            "name": "title",
+            "path": "title",
+            "formatter": "text"
+          },
+          {
+            "name": "count",
+            "path": "orders_count",
+            "formatter": "number"
+          }
+        ],
+        "status_text": {
+          "no_data": "За выбранный период заказов не найдено.",
+          "incomplete": "Пока не хватает данных за весь выбранный период. Сначала загрузим заказы магазина.",
+          "no_product": "Сначала спроси: какой товар лучший?"
+        },
+        "item_template": "• {title} — {count} {orders_word}.{cancellation_note}",
+        "cancelled_path": "rows.0.cancelled_orders_count",
+        "cancellation_template": "\nИз них отменили {cancelled_count}.",
+        "item_cancellation_template": " Отменили {cancelled_count}."
+      }
+    }
+  ],
+  "priority": 5,
+  "is_active": true,
+  "created_at": "2026-10-14T02:33:39.637535+00:00",
+  "updated_at": "2026-10-14T02:33:39.637535+00:00"
+}

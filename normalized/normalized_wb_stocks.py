@@ -151,7 +151,8 @@ def build_stock_row(raw_row: Dict[str, Any], item: Dict[str, Any]) -> Optional[D
     marketplace_product_id = str(nm_id)
     product_key = build_product_key(marketplace_product_id)
 
-    marketplace_variant_id = str(barcode) if barcode not in [None, ""] else None
+    variant_id = item.get("chrtId") or barcode
+    marketplace_variant_id = str(variant_id) if variant_id not in [None, ""] else None
     variant_key = build_variant_key(marketplace_variant_id)
 
     size_name = str(tech_size) if tech_size not in [None, ""] else None

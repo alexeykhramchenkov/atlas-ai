@@ -48,7 +48,7 @@ def date_minus_days(date_value: str, days: int) -> str:
     return datetime.fromordinal(target_ordinal).date().isoformat()
 
 
-def fetch_financial_snapshots(batch_size: int = BATCH_SIZE) -> list[dict[str, Any]]:
+def fetch_financial_snapshots(batch_size: int = BATCH_SIZE, *, user_id: int, shop_id: int, marketplace: str = MARKETPLACE) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     offset = 0
 
@@ -57,7 +57,7 @@ def fetch_financial_snapshots(batch_size: int = BATCH_SIZE) -> list[dict[str, An
             supabase
             .table(SOURCE_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
+            .eq("marketplace", marketplace).eq("user_id", user_id).eq("shop_id", shop_id)
             .order("snapshot_date", desc=False)
             .order("product_key", desc=False)
             .order("id", desc=False)
@@ -221,7 +221,7 @@ def run_metric_job(job, state, registry_entry) -> dict[str, Any]:
         f"for user_id={user_id} shop_id={shop_id} marketplace={marketplace}..."
     )
 
-    snapshot_rows = fetch_financial_snapshots()
+    snapshot_rows = fetch_financial_snapshots(user_id=user_id,shop_id=shop_id,marketplace=marketplace)
 
     if user_id is not None:
         snapshot_rows = [row for row in snapshot_rows if row.get("user_id") == user_id]
@@ -257,7 +257,7 @@ def run_metric_job(job, state, registry_entry) -> dict[str, Any]:
 
 def build_metrics_financial_daily() -> None:
     print("Fetching financial snapshots...")
-    snapshot_rows = fetch_financial_snapshots()
+    snapshot_rows = fetch_financial_snapshots(user_id=user_id,shop_id=shop_id,marketplace=marketplace)
     print(f"Financial snapshots fetched: {len(snapshot_rows)}")
 
     metric_rows = build_metrics(snapshot_rows)

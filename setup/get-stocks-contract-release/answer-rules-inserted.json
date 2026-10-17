@@ -1,0 +1,233 @@
+[
+  {
+    "id": 37,
+    "question_type": "simple",
+    "template_name": "ranking_list",
+    "language": "ru",
+    "title_template": "По данным на {as_of}",
+    "fields": [
+      {
+        "match": {
+          "metric": "stock_qty",
+          "dataset": "stocks",
+          "analysis": "metric_value"
+        }
+      },
+      {
+        "template": {
+          "rows_path": "rows",
+          "empty_text": "Нет записи об остатках для выбранного товара или даты."
+        }
+      },
+      {
+        "path": "title",
+        "role": "item_label",
+        "formatter": "text",
+        "fallback_paths": [
+          "product_key"
+        ]
+      },
+      {
+        "path": "size_name",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "warehouse_name",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "value",
+        "role": "item_value",
+        "unit": "шт.",
+        "formatter": "number"
+      }
+    ],
+    "priority": 2,
+    "is_active": true,
+    "created_at": "2026-10-16T12:53:36.853345+00:00",
+    "updated_at": "2026-10-16T12:53:36.853345+00:00"
+  },
+  {
+    "id": 38,
+    "question_type": "simple",
+    "template_name": "ranking_list",
+    "language": "ru",
+    "title_template": "Больше всего остатков среди товаров с известными данными на {as_of}",
+    "fields": [
+      {
+        "match": {
+          "metric": "stock_qty",
+          "dataset": "stocks",
+          "analysis": "best"
+        }
+      },
+      {
+        "template": {
+          "rows_path": "rows",
+          "empty_text": "Нет записи об остатках для выбранного товара или даты."
+        }
+      },
+      {
+        "path": "title",
+        "role": "item_label",
+        "formatter": "text",
+        "fallback_paths": [
+          "product_key"
+        ]
+      },
+      {
+        "path": "size_name",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "warehouse_name",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "value",
+        "role": "item_value",
+        "unit": "шт.",
+        "formatter": "number"
+      }
+    ],
+    "priority": 2,
+    "is_active": true,
+    "created_at": "2026-10-16T12:53:36.853345+00:00",
+    "updated_at": "2026-10-16T12:53:36.853345+00:00"
+  },
+  {
+    "id": 39,
+    "question_type": "simple",
+    "template_name": "ranking_list",
+    "language": "ru",
+    "title_template": "Меньше всего остатков среди товаров с известными данными на {as_of}",
+    "fields": [
+      {
+        "match": {
+          "metric": "stock_qty",
+          "dataset": "stocks",
+          "analysis": "worst"
+        }
+      },
+      {
+        "template": {
+          "rows_path": "rows",
+          "empty_text": "Нет записи об остатках для выбранного товара или даты."
+        }
+      },
+      {
+        "path": "title",
+        "role": "item_label",
+        "formatter": "text",
+        "fallback_paths": [
+          "product_key"
+        ]
+      },
+      {
+        "path": "size_name",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "warehouse_name",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "value",
+        "role": "item_value",
+        "unit": "шт.",
+        "formatter": "number"
+      }
+    ],
+    "priority": 2,
+    "is_active": true,
+    "created_at": "2026-10-16T12:53:36.853345+00:00",
+    "updated_at": "2026-10-16T12:53:36.853345+00:00"
+  },
+  {
+    "id": 40,
+    "question_type": "simple",
+    "template_name": "ranking_list",
+    "language": "ru",
+    "title_template": "Остатки по выбранному порядку на {as_of}",
+    "fields": [
+      {
+        "match": {
+          "metric": "stock_qty",
+          "dataset": "stocks",
+          "analysis": "rank"
+        }
+      },
+      {
+        "template": {
+          "rows_path": "rows",
+          "empty_text": "Нет записи об остатках для выбранного товара или даты."
+        }
+      },
+      {
+        "path": "title",
+        "role": "item_label",
+        "formatter": "text",
+        "fallback_paths": [
+          "product_key"
+        ]
+      },
+      {
+        "path": "size_name",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "warehouse_name",
+        "role": "item_label",
+        "formatter": "text"
+      },
+      {
+        "path": "value",
+        "role": "item_value",
+        "unit": "шт.",
+        "formatter": "number"
+      }
+    ],
+    "priority": 2,
+    "is_active": true,
+    "created_at": "2026-10-16T12:53:36.853345+00:00",
+    "updated_at": "2026-10-16T12:53:36.853345+00:00"
+  },
+  {
+    "id": 41,
+    "question_type": "simple",
+    "template_name": "top_product_stock",
+    "language": "ru",
+    "title_template": "Остатки по товарам с известными данными",
+    "fields": [
+      {
+        "match": {
+          "entity": "store",
+          "metric": "stock_qty",
+          "dataset": "stocks",
+          "analysis": "metric_value"
+        }
+      },
+      {
+        "path": "total_quantity",
+        "label": "Всего",
+        "formatter": "qty"
+      },
+      {
+        "path": "as_of",
+        "label": "Данные на",
+        "formatter": "text"
+      }
+    ],
+    "priority": 1,
+    "is_active": true,
+    "created_at": "2026-10-16T12:53:36.853345+00:00",
+    "updated_at": "2026-10-16T12:53:36.853345+00:00"
+  }
+]

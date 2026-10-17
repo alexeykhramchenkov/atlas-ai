@@ -20,6 +20,18 @@ REPAIR_DAYS = 7
 HISTORY_DAYS = 61
 
 
+def require_tenant_context(job: Dict[str, Any]) -> Tuple[int, int, str]:
+    missing = [field for field in ("user_id", "shop_id") if job.get(field) is None]
+    if missing:
+        raise ValueError(f"Orders metric job missing tenant context: {', '.join(missing)}")
+
+    return (
+        int(job["user_id"]),
+        int(job["shop_id"]),
+        str(job.get("marketplace") or MARKETPLACE),
+    )
+
+
 def parse_date(value: Any) -> Optional[date]:
     if value in [None, ""]:
         return None
@@ -60,7 +72,13 @@ def growth_pct(current_value: float, previous_value: float) -> float:
     return round((current_value - previous_value) / previous_value * 100, 2)
 
 
-def fetch_snapshots_for_metric_dates(dates_to_build: List[date]) -> List[Dict[str, Any]]:
+def fetch_snapshots_for_metric_dates(
+    dates_to_build: List[date],
+    *,
+    user_id: int,
+    shop_id: int,
+    marketplace: str,
+) -> List[Dict[str, Any]]:
     if not dates_to_build:
         return []
 
@@ -76,7 +94,9 @@ def fetch_snapshots_for_metric_dates(dates_to_build: List[date]) -> List[Dict[st
             supabase
             .table(SOURCE_TABLE)
             .select("*")
-            .eq("marketplace", MARKETPLACE)
+            .eq("user_id", user_id)
+            .eq("shop_id", shop_id)
+            .eq("marketplace", marketplace)
             .gte("snapshot_date", start_date.isoformat())
             .lt("snapshot_date", end_date_exclusive.isoformat())
             .order("snapshot_date")
@@ -290,9 +310,7 @@ def upsert_metrics(rows: List[Dict[str, Any]]) -> int:
 
 
 def run_metric_job(job, state, registry_entry) -> Dict[str, Any]:
-    user_id = job.get("user_id")
-    shop_id = job.get("shop_id")
-    marketplace = job.get("marketplace") or MARKETPLACE
+    user_id, shop_id, marketplace = require_tenant_context(job)
 
     source_table = registry_entry.get("source_table_name") or SOURCE_TABLE
     target_table = registry_entry.get("target_table_name") or TARGET_TABLE
@@ -307,9 +325,15 @@ def run_metric_job(job, state, registry_entry) -> Dict[str, Any]:
         normalized_date_column="snapshot_date",
         snapshot_table=target_table,
         snapshot_date_column="snapshot_date",
+        user_id=user_id,
+        shop_id=shop_id,
         marketplace=marketplace,
         repair_days=REPAIR_DAYS,
     )
+    if job.get("job_type") == "full_rebuild":
+        from snapshots.snapshot_coverage import fetch_distinct_dates, date_range
+        source_dates = fetch_distinct_dates(source_table, "snapshot_date", user_id=user_id, shop_id=shop_id, marketplace=marketplace)
+        dates_to_build = date_range(min(source_dates), max(source_dates)) if source_dates else []
     print_dates_to_build(dates_to_build)
 
     if not dates_to_build:
@@ -321,16 +345,12 @@ def run_metric_job(job, state, registry_entry) -> Dict[str, Any]:
         }
 
     print("Fetching order snapshots with history...")
-    snapshots = fetch_snapshots_for_metric_dates(dates_to_build)
-
-    if user_id is not None:
-        snapshots = [row for row in snapshots if row.get("user_id") == user_id]
-
-    if shop_id is not None:
-        snapshots = [row for row in snapshots if row.get("shop_id") == shop_id]
-
-    if marketplace:
-        snapshots = [row for row in snapshots if (row.get("marketplace") or MARKETPLACE) == marketplace]
+    snapshots = fetch_snapshots_for_metric_dates(
+        dates_to_build,
+        user_id=user_id,
+        shop_id=shop_id,
+        marketplace=marketplace,
+    )
 
     print(f"Order snapshots fetched: {len(snapshots)}")
 
@@ -347,32 +367,24 @@ def run_metric_job(job, state, registry_entry) -> Dict[str, Any]:
     }
 
 def main() -> None:
-    print("Resolving orders metrics coverage...")
-    dates_to_build = get_dates_to_build(
-        normalized_table=SOURCE_TABLE,
-        normalized_date_column="snapshot_date",
-        snapshot_table=TARGET_TABLE,
-        snapshot_date_column="snapshot_date",
-        marketplace=MARKETPLACE,
-        repair_days=REPAIR_DAYS,
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Build tenant-scoped order metrics")
+    parser.add_argument("--user-id", type=int, required=True)
+    parser.add_argument("--shop-id", type=int, required=True)
+    parser.add_argument("--marketplace", default=MARKETPLACE)
+    args = parser.parse_args()
+
+    result = run_metric_job(
+        job={
+            "user_id": args.user_id,
+            "shop_id": args.shop_id,
+            "marketplace": args.marketplace,
+        },
+        state=None,
+        registry_entry={},
     )
-    print_dates_to_build(dates_to_build)
-
-    if not dates_to_build:
-        print("No order metrics to build")
-        return
-
-    print("Fetching order snapshots with history...")
-    snapshots = fetch_snapshots_for_metric_dates(dates_to_build)
-    print(f"Order snapshots fetched: {len(snapshots)}")
-
-    metrics = build_metrics(snapshots, dates_to_build)
-    print(f"Order metrics prepared: {len(metrics)}")
-
-    sent = upsert_metrics(metrics)
-
-    print("Done")
-    print(f"Rows sent to {TARGET_TABLE}: {sent}")
+    print(result)
 
 
 if __name__ == "__main__":

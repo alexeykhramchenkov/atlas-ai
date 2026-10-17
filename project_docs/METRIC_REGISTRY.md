@@ -292,3 +292,10 @@ stock	no	in progress	partial
 * commission
 * logistics
 * average_order_value
+
+## 2026-10-17: buyer_text_topics (тестовая фоновая задача)
+
+Имя записи в существующем system_metric_registry, не новая бизнес-метрика и
+не новый публичный Analysis. Runner metrics.builders.text_topics использует
+прежний контракт run_metric_job, читает нормализованные отзывы и вопросы,
+сохраняет производные темы в три согласованные таблицы.
