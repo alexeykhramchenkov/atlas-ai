@@ -128,7 +128,7 @@ def calculate(request,facts):
                 if not r.get('product_key') or not r.get('srid') or str(r['srid']).startswith('empty:') or r['srid'] in seen:continue
                 seen.add(r['srid']);key=(r.get('country_name') or 'Страна не указана',r.get('region_name') or 'Регион не указан');counts[key]+=1
                 if r.get('is_cancel'):cancel[key]+=1
-            return finish([{'title':f'{country}: {region}','value':count,'cancelled_orders_count':cancel[(country,region)]} for (country,region),count in counts.items()])
+            return finish([{'title':f'{country}: {region}','country_name':country,'region_name':region,'value':count,'cancelled_orders_count':cancel[(country,region)]} for (country,region),count in counts.items()])
         stocks=facts.get('stocks',[])
         if not stocks:return missing('stock_snapshot')
         snapshot=max(str(r['snapshot_date'])[:10] for r in stocks)

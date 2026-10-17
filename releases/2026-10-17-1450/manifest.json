@@ -14,8 +14,8 @@
     },
     {
       "path": "ai_chat/answer_builder/templates.py",
-      "test_sha256": "2579a84660f094f792dedfc0c5a2ac2992b517a26f298e582c14b179bf2412a2",
-      "test_mtime": 1792218677.825803
+      "test_sha256": "546bf6906a8e296c1e794fc440ef4d81d742e7a755bc0e6fc35d1a2b6ca9aac1",
+      "test_mtime": 1792219893.3257496
     },
     {
       "path": "ai_chat/routing/llm_fallback.py",
@@ -34,8 +34,8 @@
     },
     {
       "path": "ai_chat/metric/seller_questions.py",
-      "test_sha256": "9f096ef809fca74059ed026dec7975da81e7e3bd52036f4aab46222b3edd844e",
-      "test_mtime": 1792219547.8171446
+      "test_sha256": "793465369a2fb87191cef72eda1f6e4fd2ba4c73c2868295006f7ee1c8a1d270",
+      "test_mtime": 1792219893.3253498
     },
     {
       "path": "telegram_bot/handlers.py",

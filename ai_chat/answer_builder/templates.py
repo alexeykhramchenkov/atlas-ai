@@ -251,6 +251,7 @@ def _render_compact(rule, data, request, language):
     values['cancellation_line']=(config.get('cancellation_template') or '').format(**values) if cancelled else ''
     rows = value(config.get('rows_path') or 'rows') or []
     items=[]
+    grouped_items={}
     for row in rows:
         row_values={}
         for field in config.get('item_fields') or []:
@@ -259,8 +260,16 @@ def _render_compact(rule, data, request, language):
         row_cancelled=row.get('cancelled_orders_count') or 0
         row_values['cancelled_count']=format_value(value=row_cancelled,formatter='number',language=language)
         row_values['cancellation_note']=(config.get('item_cancellation_template') or '').format(**row_values) if row_cancelled else ''
-        if config.get('item_template'):items.append(config['item_template'].format(**row_values))
-    values['items']='\n'.join(items)
+        if config.get('item_template'):
+            line=config['item_template'].format(**row_values)
+            if config.get('group_by'):
+                group=format_value(value=value(config['group_by'],row),formatter='html_text' if config.get('telegram_format')=='html_bold' else 'text',language=language)
+                grouped_items.setdefault(group,[]).append(line)
+            else:items.append(line)
+    if config.get('group_by'):
+        items=[config.get('group_header_template','{group}:').format(group=group)+'\n\n'+'\n'.join(lines) for group,lines in grouped_items.items()]
+        values['items']='\n\n'.join(items)
+    else:values['items']='\n'.join(items)
     for section in config.get('sections') or []:
         section_items = []
         section_rows = value(section['rows_path']) or []
