@@ -68,6 +68,12 @@ class Executor:
             rows = filter_rows(rows=prepared,conditions=[
                 {'field':'has_answer','operator':'eq','value':False},
                 {'field':'has_text','operator':'eq','value':True}])['rows']
+            if not request.get('product_key') and request.get('answer_scope') != 'all':
+                from ai_chat.internal_tools.get_products import get_products
+                catalog = get_products(request['user_id'],request['shop_id'],
+                    marketplace=request.get('marketplace','wb'),supabase=self.supabase)
+                rows = filter_rows(rows=rows,conditions=[{'field':'product_key','operator':'in',
+                    'value':[product['product_key'] for product in catalog['products']]}])['rows']
             if rows:
                 rows = rank(rows=rows,metric='created_timestamp',direction='desc',limit=len(rows))['rows']
             return {'dataset':dataset_name,'analysis':analysis_name,'metric':'reviews_count',

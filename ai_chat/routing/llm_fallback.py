@@ -374,13 +374,17 @@ def resolve_buyer_questions(question, *, memory, request_context, resolve_explic
         'mode':{'type':'string','enum':['unanswered','reviews_unanswered','topics','negative','positive']},
         'product_query':{'type':['string','null']},
         'product_reference':{'type':'boolean'},
+        'answer_scope':{'type':'string','enum':['top','all']},
         'start_date':{'type':['string','null']},'end_date':{'type':['string','null']}},
-        'required':['applicable','mode','product_query','product_reference','start_date','end_date']}
+        'required':['applicable','mode','product_query','product_reference','answer_scope','start_date','end_date']}
     try:
         parsed = generate_openai_json(schema_name='buyer_questions_intent', schema=schema, timeout=30,
             prompt='''Identify semantic topic requests about marketplace BUYER questions OR reviews.
     Modes: unanswered=buyer questions without answers; reviews_unanswered=reviews without seller answers; topics=what buyers ask about;
     New reviews means unanswered reviews by default, not a date filter. Explicit unanswered reviews use the same mode.
+    For review lists, answer_scope=top means the default catalog assortment. Use all only when the user
+    explicitly asks to include old, archived or out-of-catalog products. Whole-store scope alone is top.
+    For buyer questions use answer_scope=all. Do not infer archive inclusion from a whole-store request.
     negative=what buyers criticize in reviews; positive=what buyers praise in reviews.
     For reviews these modes mean TOPICS, not counts or growth/rating metrics.
     applicable=false for rating/count/change requests and other intents.
@@ -403,7 +407,7 @@ def resolve_buyer_questions(question, *, memory, request_context, resolve_explic
            'analysis':'metric_value',
            'entity':'product' if product else 'store','scope':'product' if product else 'store',
            'view':'unanswered' if parsed['mode']=='reviews_unanswered' else parsed['mode'],'is_answered':False if parsed['mode'] in ('unanswered','reviews_unanswered') else None,
-           'answer_scope':'all'}
+           'answer_scope':parsed.get('answer_scope','top') if parsed['mode']=='reviews_unanswered' else 'all'}
     if product:
         req.update(product_key=product['product_key'],product=product)
     elif parsed['mode'] in ('topics','negative','positive') or parsed.get('product_query'):
