@@ -1,5 +1,5 @@
 {
-  "unit_tests": 323,
+  "unit_tests": 324,
   "production_runtime_commit_verified": "e4a830a",
   "railway_deployment_verified": "47be5932-34d4-40da-8f4f-d443c5c40eec",
   "rule_rows_verified": 103,
@@ -11,5 +11,6 @@
     "В какие города чаще заказывают?"
   ],
   "dialogue_planner_enabled": false,
-  "daily_schedule_unchanged": true
+  "daily_schedule_unchanged": true,
+  "revision": "r1"
 }

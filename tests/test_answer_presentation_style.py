@@ -31,3 +31,11 @@ class CountryGroupingTests(unittest.TestCase):
   self.assertEqual(text.count('Россия <А>:'),1)
   self.assertIn('• Москва: 4\n• Татарстан: 2',text)
   self.assertEqual(len(spans),6)
+
+class ItemFormattingOptionsTests(unittest.TestCase):
+ def test_item_days_uses_rule_rounding_options(self):
+  rule={'template_name':'compact_text','title_template':'{items}','fields':[{'template':{
+   'rows_path':'rows','item_fields':[{'name':'days','path':'value','formatter':'days','options':{'decimals':0}}],
+   'item_template':'Примерно {days}'}}]}
+  answer=apply_template(rule=rule,fields=[],data={'rows':[{'value':102.86}]},request={},language='ru')
+  self.assertEqual(answer,'Примерно 103 дня')

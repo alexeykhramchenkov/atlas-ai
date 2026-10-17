@@ -255,7 +255,7 @@ def _render_compact(rule, data, request, language):
     for row in rows:
         row_values={}
         for field in config.get('item_fields') or []:
-            row_values[field['name']]=format_value(value=value(field['path'],row),formatter=field.get('formatter') or 'text',language=language)
+            row_values[field['name']]=format_value(value=value(field['path'],row),formatter=field.get('formatter') or 'text',language=language,options=field.get('options'))
         if row.get('value') is not None:row_values['orders_word']=noun(row['value'])
         row_cancelled=row.get('cancelled_orders_count') or 0
         row_values['cancelled_count']=format_value(value=row_cancelled,formatter='number',language=language)

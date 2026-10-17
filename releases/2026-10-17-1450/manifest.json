@@ -14,8 +14,8 @@
     },
     {
       "path": "ai_chat/answer_builder/templates.py",
-      "test_sha256": "546bf6906a8e296c1e794fc440ef4d81d742e7a755bc0e6fc35d1a2b6ca9aac1",
-      "test_mtime": 1792219893.3257496
+      "test_sha256": "da25cfbaa6956cc3783d2428a5b04f587e8b51931ed6c67547dcd2c349c548cc",
+      "test_mtime": 1792220368.0820212
     },
     {
       "path": "ai_chat/routing/llm_fallback.py",
@@ -50,7 +50,7 @@
   "excluded": [
     "local unauthenticated web API"
   ],
-  "tests_passed": 323,
+  "tests_passed": 324,
   "status": "published",
   "configuration_verified": true,
   "telegram_verified": [
@@ -58,5 +58,6 @@
     "carts_without_orders",
     "regions_store"
   ],
-  "operator_receipts": "ATLAS/releases/2026-10-17-1450"
+  "operator_receipts": "ATLAS/releases/2026-10-17-1450",
+  "revision": "r1"
 }
