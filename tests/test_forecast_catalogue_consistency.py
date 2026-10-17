@@ -32,3 +32,9 @@ class ForecastCatalogueTests(unittest.TestCase):
   self.assertEqual(calculate(request,facts)['rows'][0]['value'],13)
   del facts['stocks'][0]['warehouse_quantity']
   self.assertEqual(calculate(request,facts)['status'],'incomplete')
+
+ def test_shown_selection_preserves_breakdown_dimension(self):
+  from ai_chat.routing.llm_fallback import validate_clarification_updates
+  for entity in ('variant','warehouse','region'):
+   r=validate_clarification_updates([{'field':'selection','value':'shown_products'}],request={'dataset':'stocks','metric':'days_left','entity':entity},memory={'shown_product_keys':['a']})
+   self.assertEqual(r['entity'],entity);self.assertEqual(r['product_keys'],['a'])

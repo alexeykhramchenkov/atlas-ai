@@ -249,7 +249,8 @@ def validate_clarification_updates(updates, *, request, memory):
             if value=='shown_products':
                 keys=memory.get('shown_product_keys') or memory.get('product_keys') or []
                 if not keys:raise ValueError('No displayed selection')
-                result.update(product_keys=list(keys),entity='product',scope='product')
+                dimension=result.get('entity')
+                result.update(product_keys=list(keys),entity=dimension if dimension in ('variant','warehouse','region') else 'product',scope='product')
                 result.pop('product_key',None)
             elif value=='store':
                 dimension=result.get('entity')
@@ -324,7 +325,7 @@ that names NO product and has NO explicit reference to previous products means t
 total. Execute with selection=store, do not ask. Explicit reference to these/their products means
 selection=shown_products. A specifically named/resolved product retains its own product_key and is
 not replaced with store or old selection. Only truly unclear product references require clarification.
-Replenishment/which products will run out uses days_left across the whole store by default even after a list; execute selection=store. An explicit semantic reference to a previous list uses selection=shown_products. This selects scope only, retaining rank and days_left and the 30-day calculation period.
+Replenishment/which products will run out uses days_left across the whole store by default even after a list; execute selection=store. An explicit semantic reference to a previous list uses selection=shown_products. This selects scope only, retaining rank and days_left and the 30-day calculation period. A size/variant forecast retains entity=variant even with selection=shown_products. A delivery horizon (for example, how many units to bring for the NEXT two weeks) is not a historical demand observation period. For replenishment_qty preserve the candidate historical dates and 30-day pace; never replace them with future dates. Only an explicitly requested past observation window changes demand dates.
 Do not clarify already agreed defaults: funnel summary defaults to7days/comparison; order amount
 lists hide zeros; funnel lists use80%stock. Clear explicit periods override context. Do not ask just
 because the metric changes; ask only where a meaningful choice remains.
