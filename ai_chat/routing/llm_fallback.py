@@ -338,7 +338,7 @@ because the metric changes; ask only where a meaningful choice remains.
 User-facing questions and option labels must use plain Russian: ask for a product name or WB article.
 Never mention product_key, dataset, metric, IDs, JSON, or other internal parameter names to the user.
 Use parameter names only from schema. selection updates are symbolic shown_products/store;
-server supplies IDs. No tenant/security fields. Provide exactly 2 options when a clarification is needed. Labels must be short, at most 24 characters, suitable for Telegram buttons. Keep the question brief; buttons supply the two alternatives.
+server supplies IDs. selection=store already clears product_key/product_keys/product automatically. Never send an empty product_key or strings such as null/none/store to clear a product: those are invalid identifiers. Never combine a selection update with a product_key update. Use product_key only when selecting an exact known ID from bounded context. No tenant/security fields. Provide exactly 2 options when a clarification is needed. Labels must be short, at most 24 characters, suitable for Telegram buttons. Keep the question brief; buttons supply the two alternatives.
 Question must reflect the exact options, no invented numbers: size of shown list is known from context.
 For a valid registered ranking the metric, dataset and analysis are already resolved. Do not rewrite them; select only store versus shown_products and an explicitly requested period. A new general ranking (including returns/cancellations) executes store scope; no need to clarify an agreed default.
 execute may repair a clear intent via updates; clarify supplies question and options with validated

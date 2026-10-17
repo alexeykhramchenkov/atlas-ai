@@ -76,3 +76,7 @@ class StockSnapshotReplacementTests(unittest.TestCase):
     builder.run_metric_job(T,None,{})
    self.assertEqual(writer.call_args.args[2],[])
    self.assertEqual(writer.call_args.args[3],[date(2026,10,17)])
+ def test_malformed_quantities_cannot_silently_zero_a_complete_snapshot(self):
+  for value in (None,'broken',True,-1,'1.5','NaN'):
+   with self.assertRaises(ValueError):normalizer.build_complete_stock_rows([source(qty=value)])
+  self.assertEqual(normalizer.build_complete_stock_rows([source(qty='1.0')])[0]['quantity'],1)

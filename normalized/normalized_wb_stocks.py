@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal, InvalidOperation
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -250,6 +251,16 @@ def build_complete_stock_rows(raw_rows):
         if not items:
             raise ValueError('Malformed or ambiguous empty stock source')
         for item in items:
+            item = dict(item)
+            for field, alias in (('quantity','quantity'), ('inWayToClient','in_way_to_client'), ('inWayFromClient','in_way_from_client')):
+                value = payload_value(item, field, alias)
+                try:
+                    number = Decimal(str(value))
+                except (InvalidOperation, ValueError):
+                    raise ValueError('Missing or malformed stock quantity') from None
+                if isinstance(value, bool) or not number.is_finite() or number < 0 or number != number.to_integral_value():
+                    raise ValueError('Invalid stock quantity')
+                item[field] = int(number)
             row = build_stock_row(raw_row, item)
             if row is None or not row.get('variant_key'):
                 raise ValueError('Incomplete stock identity in full snapshot')

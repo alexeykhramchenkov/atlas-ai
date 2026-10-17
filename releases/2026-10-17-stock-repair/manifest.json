@@ -8,11 +8,12 @@
     "Replace complete stock snapshot and metric date groups; remove disappeared identities",
     "Handle confirmed empty snapshots and reject malformed input",
     "Use source snapshot date for latest-stock availability to prevent stale fallback",
-    "Preserve get_stocks parameters and response fields"
+    "Preserve get_stocks parameters and response fields",
+    "Apply contextual product selection before variant ranking and totals"
   ],
   "migration": "sql/20261017_replace_stock_snapshot_rows.sql",
-  "automated_tests": 353,
+  "automated_tests": 355,
   "database_rollback_probes": 6,
   "get_contracts_changed": false,
-  "status": "prepared"
+  "status": "data_verified_telegram_retest"
 }

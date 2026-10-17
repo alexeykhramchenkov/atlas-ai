@@ -205,7 +205,13 @@ class Executor:
                 period_days=(date.fromisoformat(facts["end_date"])-date.fromisoformat(facts["start_date"])).days+1)
             if request.get('entity')=='variant':
                 from ai_chat.analysis.analysis_type.filter import run as filter_rows
-                rows=filter_rows(rows=facts['variants'],conditions=[{'field':field,'operator':'gt','value':0}])['rows']
+                variants=facts['variants']
+                if request.get('product_keys') is not None:
+                    variants=filter_rows(rows=variants,conditions=[{'field':'product_key','operator':'in','value':request['product_keys']}])['rows']
+                    totals={name:None if any(row.get(name) is None for row in variants) else sum(row[name] for row in variants)
+                            for name in ('orders_count','cancelled_orders_count','orders_amount','cancelled_orders_amount')}
+                    facts={**facts,**totals,'variants':variants}
+                rows=filter_rows(rows=variants,conditions=[{'field':field,'operator':'gt','value':0}])['rows']
                 ranked=rank(rows=rows,metric=field,direction=request.get('direction') or ('asc' if analysis_name=='worst' else 'desc'),limit=int(request.get('limit',5)))
                 return {**context,**facts,'status':'ok','rows':[{**row,'value':row[field]} for row in ranked['rows']]}
             if analysis_name == "compare":
