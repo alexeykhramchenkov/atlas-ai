@@ -1,0 +1,4887 @@
+[
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"lookup_chain\", \"ru\", \"compact_text\", {}]",
+    "changes": {
+      "template_name": "compact_text",
+      "title_template": "<b>Лидер по заказам</b>{period_heading}\n\nТовар: {value0}\nАртикул: {value1}\nЗаказы за период: <b>{value2}</b>\nВыручка: <b>{value3}</b>\nОстаток: <b>{value4}</b>\nВ пути к клиенту: <b>{value5}</b>\nВ пути от клиента: <b>{value6}</b>\nДоступно всего: <b>{value7}</b>\nСредние продажи в день: <b>{value8}</b>\nХватит на: <b>{value9}</b>\nС учетом товара в пути: <b>{value10}</b>",
+      "fields": [
+        {
+          "path": "steps.0.result.rows.0.title",
+          "label": "value0",
+          "formatter": "html_text"
+        },
+        {
+          "path": "steps.0.result.rows.0.product_key",
+          "label": "value1",
+          "formatter": "html_text"
+        },
+        {
+          "path": "steps.0.result.rows.0.orders_count",
+          "label": "value2",
+          "formatter": "number"
+        },
+        {
+          "path": "steps.0.result.rows.0.gross_order_value",
+          "label": "value3",
+          "formatter": "money"
+        },
+        {
+          "path": "steps.1.result.rows.0.stock_qty",
+          "label": "value4",
+          "formatter": "qty"
+        },
+        {
+          "path": "steps.1.result.rows.0.stock_in_way_to_client",
+          "label": "value5",
+          "formatter": "qty"
+        },
+        {
+          "path": "steps.1.result.rows.0.stock_in_way_from_client",
+          "label": "value6",
+          "formatter": "qty"
+        },
+        {
+          "path": "steps.1.result.rows.0.stock_available_total",
+          "label": "value7",
+          "formatter": "qty"
+        },
+        {
+          "path": "steps.1.result.rows.0.avg_daily_orders",
+          "label": "value8",
+          "formatter": "number"
+        },
+        {
+          "path": "steps.1.result.rows.0.days_left",
+          "label": "value9",
+          "formatter": "days"
+        },
+        {
+          "path": "steps.1.result.rows.0.days_left_total",
+          "label": "value10",
+          "formatter": "days"
+        },
+        {
+          "template": {
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"orders\", \"entity\": \"product\", \"metric\": \"orders_count\"}]",
+    "changes": {
+      "template_name": "compact_text",
+      "title_template": "<b>Лидеры по заказам</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "orders_count",
+            "dataset": "orders",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Данных по заказам товаров не найдено.",
+                "item_fields": [
+                  {
+                    "name": "label0",
+                    "path": "title",
+                    "role": "item_label",
+                    "formatter": "html_text",
+                    "fallback_paths": [
+                      "product_name",
+                      "product_key"
+                    ]
+                  },
+                  {
+                    "name": "value",
+                    "path": "orders_count",
+                    "role": "item_value",
+                    "unit": "заказов",
+                    "formatter": "number",
+                    "fallback_paths": [
+                      "orders",
+                      "value"
+                    ]
+                  }
+                ],
+                "item_template": "• {label0} — <b>{value}</b> {orders_word}"
+              }
+            ],
+            "rows_path": "rows",
+            "empty_text": "Данных по заказам товаров не найдено.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"orders\", \"entity\": \"product\", \"metric\": \"orders_revenue\"}]",
+    "changes": {
+      "template_name": "compact_text",
+      "title_template": "<b>Лидеры по сумме заказов</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "orders_revenue",
+            "dataset": "orders",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Данных по выручке товаров не найдено.",
+                "item_fields": [
+                  {
+                    "name": "label0",
+                    "path": "title",
+                    "role": "item_label",
+                    "formatter": "html_text",
+                    "fallback_paths": [
+                      "product_name",
+                      "product_key"
+                    ]
+                  },
+                  {
+                    "name": "value",
+                    "path": "gross_order_value",
+                    "role": "item_value",
+                    "formatter": "money",
+                    "fallback_paths": [
+                      "orders_revenue",
+                      "revenue",
+                      "value"
+                    ]
+                  }
+                ],
+                "item_template": "• {label0}: <b>{value}</b>"
+              }
+            ],
+            "rows_path": "rows",
+            "empty_text": "Данных по выручке товаров не найдено.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"stocks\", \"entity\": \"product\", \"metric\": \"stock_qty\"}]",
+    "changes": {
+      "template_name": "compact_text",
+      "title_template": "<b>Самые большие остатки</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "stock_qty",
+            "dataset": "stocks",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Данных по остаткам товаров не найдено.",
+                "item_fields": [
+                  {
+                    "name": "label0",
+                    "path": "title",
+                    "role": "item_label",
+                    "formatter": "html_text",
+                    "fallback_paths": [
+                      "product_name",
+                      "product_key"
+                    ]
+                  },
+                  {
+                    "name": "value",
+                    "path": "total_quantity",
+                    "role": "item_value",
+                    "unit": "шт.",
+                    "formatter": "number",
+                    "fallback_paths": [
+                      "stock_qty",
+                      "stock",
+                      "value"
+                    ]
+                  }
+                ],
+                "item_template": "• {label0}: <b>{value}</b> шт."
+              }
+            ],
+            "rows_path": "rows",
+            "empty_text": "Данных по остаткам товаров не найдено.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"orders\", \"entity\": \"store\", \"metric\": \"orders_count\"}]",
+    "changes": {
+      "title_template": "<b>Заказы магазина</b>{period_heading}\n\n<b>{count}</b> {orders_word}{cancellation_line}",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "orders_count",
+            "dataset": "orders",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "status_text": {
+              "no_data": "За выбранный период заказов не найдено.",
+              "incomplete": "Пока не хватает данных за весь выбранный период. Сначала загрузим заказы магазина.",
+              "no_product": "Сначала спроси: какой товар лучший?"
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>."
+          }
+        },
+        {
+          "path": "orders_count",
+          "label": "count",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"orders\", \"entity\": \"product\", \"metric\": \"orders_count\"}]",
+    "changes": {
+      "title_template": "<b>Лидеры по заказам</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "orders_count",
+            "dataset": "orders",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "empty_text": "За выбранный период заказов не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "count",
+                "path": "orders_count",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период заказов не найдено.",
+              "incomplete": "Пока не хватает данных за весь выбранный период. Сначала загрузим заказы магазина.",
+              "no_product": "Сначала спроси: какой товар лучший?"
+            },
+            "item_template": "• {title} — <b>{count}</b> {orders_word}{cancellation_note}",
+            "cancelled_path": "rows.0.cancelled_orders_count",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " Отменили <b>{cancelled_count}</b>."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"orders\", \"entity\": \"region\", \"metric\": \"orders_count\"}]",
+    "changes": {
+      "title_template": "<b>География заказов</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "region",
+            "metric": "orders_count",
+            "dataset": "orders",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "За выбранный период этот товар не заказывали.",
+            "item_fields": [
+              {
+                "name": "region",
+                "path": "region_name",
+                "formatter": "html_text"
+              },
+              {
+                "name": "count",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период заказов не найдено.",
+              "incomplete": "Пока не хватает данных за весь выбранный период. Сначала загрузим заказы магазина.",
+              "no_product": "Сначала спроси: какой товар лучший?"
+            },
+            "equal_summary": "Все эти регионы на первом месте.",
+            "item_template": "• {region} — <b>{count}</b> {orders_word}{cancellation_note}",
+            "partial_intro": "Чаще всего этот товар заказывали в этих регионах",
+            "complete_intro": "Этот товар заказывали в следующих регионах",
+            "omit_same_year": true,
+            "ranked_summary": "Регионы показаны по числу заказов, от большего к меньшему.",
+            "telegram_format": "html_bold",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"orders\", \"entity\": \"store\", \"metric\": \"orders_today\"}]",
+    "changes": {
+      "title_template": "<b>Заказы сегодня</b>{period_heading}\n\n<b>{value}</b> {orders_word}.{cancellation_line}\n\n{note}",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "orders_today",
+            "dataset": "orders",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "value",
+          "label": "value",
+          "formatter": "number"
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"orders\", \"entity\": \"store\", \"metric\": \"orders_week_change\"}]",
+    "changes": {
+      "title_template": "<b>Динамика заказов</b>{period_heading}\n\nЗаказы за выбранный период: <b>{current}</b>.\nЗа предыдущий: <b>{previous}</b>.\nИзменение: <b>{change}</b> (<b>{percent}</b>).",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "orders_week_change",
+            "dataset": "orders",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "current",
+          "label": "current",
+          "formatter": "number"
+        },
+        {
+          "path": "previous",
+          "label": "previous",
+          "formatter": "number"
+        },
+        {
+          "path": "change_abs",
+          "label": "change",
+          "formatter": "number"
+        },
+        {
+          "path": "change_pct",
+          "label": "percent",
+          "formatter": "percent"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"orders\", \"entity\": \"product\", \"metric\": \"orders_growth\"}]",
+    "changes": {
+      "title_template": "<b>Рост заказов</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "orders_growth",
+            "dataset": "orders",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "current",
+                "path": "current",
+                "formatter": "number"
+              },
+              {
+                "name": "previous",
+                "path": "previous",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: заказы <b>{previous}</b> → <b>{current}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"orders\", \"entity\": \"product\", \"metric\": \"orders_decline\"}]",
+    "changes": {
+      "title_template": "<b>Падение заказов</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "orders_decline",
+            "dataset": "orders",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "current",
+                "path": "current",
+                "formatter": "number"
+              },
+              {
+                "name": "previous",
+                "path": "previous",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: заказы <b>{previous}</b> → <b>{current}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"orders\", \"entity\": \"product\", \"metric\": \"zero_orders\"}]",
+    "changes": {
+      "title_template": "<b>Товары без заказов</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "zero_orders",
+            "dataset": "orders",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "article",
+                "path": "marketplace_product_id",
+                "formatter": "html_text"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title} · WB {article}",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"stocks\", \"entity\": \"product\", \"metric\": \"replenishment_risk\"}]",
+    "changes": {
+      "title_template": "<b>Что пора пополнить</b>{period_heading}\n\n{items}\n\n{note}\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "replenishment_risk",
+            "dataset": "stocks",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "days",
+                "path": "value",
+                "formatter": "number"
+              },
+              {
+                "name": "qty",
+                "path": "stock_qty",
+                "formatter": "number"
+              },
+              {
+                "name": "article",
+                "path": "marketplace_product_id",
+                "formatter": "html_text"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title} · WB {article}: осталось <b>{qty}</b> шт., примерно на <b>{days}</b> дн.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.snapshot_date",
+          "label": "stock_date",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"stocks\", \"entity\": \"product\", \"metric\": \"stock_days\"}]",
+    "changes": {
+      "title_template": "<b>Запас товара</b>{period_heading}\n\n{title}\nОсталось <b>{qty}</b> шт. — примерно на <b>{days}</b> дн.\n\n{note}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "stock_days",
+            "dataset": "stocks",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "rows.0.title",
+          "label": "title",
+          "formatter": "html_text"
+        },
+        {
+          "path": "rows.0.stock_qty",
+          "label": "qty",
+          "formatter": "number"
+        },
+        {
+          "path": "rows.0.value",
+          "label": "days",
+          "formatter": "number"
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.snapshot_date",
+          "label": "stock_date",
+          "formatter": "html_text"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"stocks\", \"entity\": \"variant\", \"metric\": \"size_stock_days\"}]",
+    "changes": {
+      "title_template": "<b>Заканчивающиеся размеры</b>{period_heading}\n\n{items}\n\n{note}\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "variant",
+            "metric": "size_stock_days",
+            "dataset": "stocks",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Среди размеров с полными данными запас до 7 дней не найден.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "qty",
+                "path": "stock_qty",
+                "formatter": "number"
+              },
+              {
+                "name": "days",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Недостаточно данных для оценки размеров. Нужны полные заказы за период и остатки с указанием размеров. Не могу подтвердить, что заканчивающихся размеров нет.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{qty}</b> шт., примерно на <b>{days}</b> дн.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.snapshot_date",
+          "label": "stock_date",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"stocks\", \"entity\": \"product\", \"metric\": \"replenishment_qty\"}]",
+    "changes": {
+      "title_template": "<b>Сколько довезти</b>{period_heading}\n\n{items}\n\n{note}\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "replenishment_qty",
+            "dataset": "stocks",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              },
+              {
+                "name": "article",
+                "path": "marketplace_product_id",
+                "formatter": "html_text"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title} · WB {article}: около <b>{value}</b> шт.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.snapshot_date",
+          "label": "stock_date",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"stocks\", \"entity\": \"product\", \"metric\": \"stagnant_stock\"}]",
+    "changes": {
+      "title_template": "<b>Товары без спроса</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "stagnant_stock",
+            "dataset": "stocks",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "qty",
+                "path": "stock_qty",
+                "formatter": "number"
+              },
+              {
+                "name": "orders",
+                "path": "orders_count",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: остаток <b>{qty}</b> шт., заказов <b>{orders}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.snapshot_date",
+          "label": "stock_date",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"realization\", \"entity\": \"store\", \"metric\": \"wb_expenses\"}]",
+    "changes": {
+      "title_template": "<b>Расходы Wildberries</b>{period_heading}\n\nВсего удержано: <b>{value}</b>\nКомиссии: <b>{commission}</b>\nДоставка: <b>{logistics}</b>\nХранение: <b>{storage}</b>",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "wb_expenses",
+            "dataset": "realization",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "value",
+          "label": "value",
+          "formatter": "money"
+        },
+        {
+          "path": "meta.wb_commission_amount",
+          "label": "commission",
+          "formatter": "money"
+        },
+        {
+          "path": "meta.logistics_amount",
+          "label": "logistics",
+          "formatter": "money"
+        },
+        {
+          "path": "meta.storage_amount",
+          "label": "storage",
+          "formatter": "money"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"ads\", \"entity\": \"store\", \"metric\": \"ads_spend\"}]",
+    "changes": {
+      "title_template": "<b>Расходы на рекламу</b>{period_heading}\n\nНа рекламу потратили <b>{value}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "ads_spend",
+            "dataset": "ads",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "value",
+          "label": "value",
+          "formatter": "money"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"ads\", \"entity\": \"product\", \"metric\": \"ads_orders\"}]",
+    "changes": {
+      "title_template": "<b>Заказы из рекламы</b>{period_heading}\n\n{items}\n\n{note}\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "ads_orders",
+            "dataset": "ads",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{value}</b> {orders_word}",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"ads\", \"entity\": \"product\", \"metric\": \"ads_without_orders\"}]",
+    "changes": {
+      "title_template": "<b>Реклама без заказов</b>{period_heading}\n\n{items}\n\n{note}\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "ads_without_orders",
+            "dataset": "ads",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "money"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{value}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"ads\", \"entity\": \"store\", \"metric\": \"ads_cpo\"}]",
+    "changes": {
+      "title_template": "<b>Стоимость заказа из рекламы</b>{period_heading}\n\nОдин заказ из рекламы обходится в <b>{value}</b>.\nРасход: <b>{spend}</b>, заказов из рекламы: <b>{count}</b>.\n\n{note}",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "ads_cpo",
+            "dataset": "ads",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За выбранный период заказов из рекламы нет, поэтому стоимость одного заказа не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "value",
+          "label": "value",
+          "formatter": "money"
+        },
+        {
+          "path": "meta.spend",
+          "label": "spend",
+          "formatter": "money"
+        },
+        {
+          "path": "meta.orders_count",
+          "label": "count",
+          "formatter": "number"
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"ads\", \"entity\": \"store\", \"metric\": \"ads_decline\"}]",
+    "changes": {
+      "title_template": "<b>Эффективность рекламы</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "ads_decline",
+            "dataset": "ads",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "percent"
+              },
+              {
+                "name": "spend",
+                "path": "spend",
+                "formatter": "money"
+              },
+              {
+                "name": "orders",
+                "path": "orders_count",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: изменение <b>{value}</b>, расход <b>{spend}</b>, заказов <b>{orders}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"funnel\", \"entity\": \"product\", \"metric\": \"views_without_orders\"}]",
+    "changes": {
+      "title_template": "<b>Просмотры без заказов</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "views_without_orders",
+            "dataset": "funnel",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: просмотров карточки — <b>{value}</b>, заказов — 0",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"funnel\", \"entity\": \"product\", \"metric\": \"carts_without_orders\"}]",
+    "changes": {
+      "title_template": "<b>Корзины без заказов</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "carts_without_orders",
+            "dataset": "funnel",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: добавлений в корзину — <b>{value}</b>, заказов — 0",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"funnel\", \"entity\": \"product\", \"metric\": \"conversion_decline\"}]",
+    "changes": {
+      "title_template": "<b>Падение конверсии</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "conversion_decline",
+            "dataset": "funnel",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "current",
+                "path": "current",
+                "formatter": "percent"
+              },
+              {
+                "name": "previous",
+                "path": "previous",
+                "formatter": "percent"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{previous}</b> → <b>{current}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"prices\", \"entity\": \"product\", \"metric\": \"price_change_orders\"}]",
+    "changes": {
+      "title_template": "<b>После изменения цены</b>{period_heading}\n\nПосле изменения цены: <b>{previous_price}</b> → <b>{current_price}</b>.\nЗаказы: <b>{previous}</b> за неделю до → <b>{current}</b> за неделю после.\n\n{note}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "price_change_orders",
+            "dataset": "prices",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока нет достаточной истории цен и двух полных недель заказов до и после изменения. Одной текущей цены недостаточно.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.previous_price",
+          "label": "previous_price",
+          "formatter": "money"
+        },
+        {
+          "path": "meta.current_price",
+          "label": "current_price",
+          "formatter": "money"
+        },
+        {
+          "path": "previous",
+          "label": "previous",
+          "formatter": "number"
+        },
+        {
+          "path": "current",
+          "label": "current",
+          "formatter": "number"
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"funnel\", \"entity\": \"store\", \"metric\": \"buyout_rate\"}]",
+    "changes": {
+      "title_template": "<b>Процент выкупа</b>{period_heading}\n\nПроцент выкупа — <b>{value}</b>.\nВыкупы — <b>{buyouts}</b>, отказы и возвраты — <b>{cancelled}</b>.\n\nПо воронке WB: выкупы / (выкупы + отказы и возвраты). Товары в пути не учитываются.",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "buyout_rate",
+            "dataset": "funnel",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "value",
+          "label": "value",
+          "formatter": "percent"
+        },
+        {
+          "path": "meta.buyout_count",
+          "label": "buyouts",
+          "formatter": "number"
+        },
+        {
+          "path": "meta.cancel_count",
+          "label": "cancelled",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"orders\", \"entity\": \"product\", \"metric\": \"cancelled_orders\"}]",
+    "changes": {
+      "title_template": "<b>Чаще отменяют</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "cancelled_orders",
+            "dataset": "orders",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              },
+              {
+                "name": "orders",
+                "path": "orders_count",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: отменили <b>{value}</b> из <b>{orders}</b> заказов",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"sales\", \"entity\": \"product\", \"metric\": \"return_count\"}]",
+    "changes": {
+      "title_template": "<b>Чаще возвращают</b>{period_heading}\n\n{items}\n\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "return_count",
+            "dataset": "sales",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: возвратов — <b>{value}</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"feedbacks\", \"entity\": \"product\", \"metric\": \"review_complaints\"}]",
+    "changes": {
+      "title_template": "<b>Жалобы покупателей</b>{period_heading}\n\n{items}\n\n{note}\nПоказано <b>{region_count}</b> из <b>{total}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "review_complaints",
+            "dataset": "feedbacks",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "За выбранный период отзывы с жалобами и оценкой 1–3 не найдены.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              },
+              {
+                "name": "text",
+                "path": "text",
+                "formatter": "html_text"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{value}</b> отзывов\n  Пример: {text}",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.note",
+          "label": "note",
+          "formatter": "html_text"
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"orders\", \"entity\": \"region\", \"metric\": \"regions_store\"}]",
+    "changes": {
+      "title_template": "<b>Регионы заказов</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "region",
+            "metric": "regions_store",
+            "dataset": "orders",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Таких товаров за выбранный период не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: <b>{value}</b> {orders_word}{cancellation_note}",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"stocks\", \"metric\": \"stock_qty\"}]",
+    "changes": {
+      "template_name": "compact_text",
+      "title_template": "<b>Остатки товара</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "stock_qty",
+            "dataset": "stocks",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Нет записи об остатках для выбранного товара или даты.",
+                "item_fields": [
+                  {
+                    "name": "label0",
+                    "path": "title",
+                    "role": "item_label",
+                    "formatter": "html_text",
+                    "fallback_paths": [
+                      "product_key"
+                    ]
+                  },
+                  {
+                    "name": "label1",
+                    "path": "size_name",
+                    "role": "item_label",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "label2",
+                    "path": "warehouse_name",
+                    "role": "item_label",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "value",
+                    "path": "value",
+                    "role": "item_value",
+                    "unit": "шт.",
+                    "formatter": "number"
+                  }
+                ],
+                "item_template": "• {label0} / {label1} / {label2}: <b>{value}</b> шт."
+              }
+            ],
+            "rows_path": "rows",
+            "empty_text": "Нет записи об остатках для выбранного товара или даты.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"stocks\", \"metric\": \"stock_qty\"}]",
+    "changes": {
+      "template_name": "compact_text",
+      "title_template": "<b>Самые большие остатки</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "stock_qty",
+            "dataset": "stocks",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Нет записи об остатках для выбранного товара или даты.",
+                "item_fields": [
+                  {
+                    "name": "label0",
+                    "path": "title",
+                    "role": "item_label",
+                    "formatter": "html_text",
+                    "fallback_paths": [
+                      "product_key"
+                    ]
+                  },
+                  {
+                    "name": "label1",
+                    "path": "size_name",
+                    "role": "item_label",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "label2",
+                    "path": "warehouse_name",
+                    "role": "item_label",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "value",
+                    "path": "value",
+                    "role": "item_value",
+                    "unit": "шт.",
+                    "formatter": "number"
+                  }
+                ],
+                "item_template": "• {label0} / {label1} / {label2}: <b>{value}</b> шт."
+              }
+            ],
+            "rows_path": "rows",
+            "empty_text": "Нет записи об остатках для выбранного товара или даты.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"stocks\", \"metric\": \"stock_qty\"}]",
+    "changes": {
+      "template_name": "compact_text",
+      "title_template": "<b>Самые маленькие остатки</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "stock_qty",
+            "dataset": "stocks",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Нет записи об остатках для выбранного товара или даты.",
+                "item_fields": [
+                  {
+                    "name": "label0",
+                    "path": "title",
+                    "role": "item_label",
+                    "formatter": "html_text",
+                    "fallback_paths": [
+                      "product_key"
+                    ]
+                  },
+                  {
+                    "name": "label1",
+                    "path": "size_name",
+                    "role": "item_label",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "label2",
+                    "path": "warehouse_name",
+                    "role": "item_label",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "value",
+                    "path": "value",
+                    "role": "item_value",
+                    "unit": "шт.",
+                    "formatter": "number"
+                  }
+                ],
+                "item_template": "• {label0} / {label1} / {label2}: <b>{value}</b> шт."
+              }
+            ],
+            "rows_path": "rows",
+            "empty_text": "Нет записи об остатках для выбранного товара или даты.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"stocks\", \"metric\": \"stock_qty\"}]",
+    "changes": {
+      "template_name": "compact_text",
+      "title_template": "<b>Остатки товаров</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "stock_qty",
+            "dataset": "stocks",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Нет записи об остатках для выбранного товара или даты.",
+                "item_fields": [
+                  {
+                    "name": "label0",
+                    "path": "title",
+                    "role": "item_label",
+                    "formatter": "html_text",
+                    "fallback_paths": [
+                      "product_key"
+                    ]
+                  },
+                  {
+                    "name": "label1",
+                    "path": "size_name",
+                    "role": "item_label",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "label2",
+                    "path": "warehouse_name",
+                    "role": "item_label",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "value",
+                    "path": "value",
+                    "role": "item_value",
+                    "unit": "шт.",
+                    "formatter": "number"
+                  }
+                ],
+                "item_template": "• {label0} / {label1} / {label2}: <b>{value}</b> шт."
+              }
+            ],
+            "rows_path": "rows",
+            "empty_text": "Нет записи об остатках для выбранного товара или даты.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"stocks\", \"entity\": \"store\", \"metric\": \"stock_qty\"}]",
+    "changes": {
+      "template_name": "compact_text",
+      "title_template": "<b>Остатки товаров</b>{period_heading}\n\nВсего: <b>{value1}</b>",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "stock_qty",
+            "dataset": "stocks",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "total_quantity",
+          "label": "value1",
+          "formatter": "qty"
+        },
+        {
+          "template": {
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"funnel\", \"metric\": \"funnel\"}]",
+    "changes": {
+      "title_template": "<b>Воронка магазина</b>{period_heading}\n\nПосмотрели карточки: <b>{open_count}</b>\nДобавили в корзину: <b>{cart_count}</b>\nЗаказали: <b>{order_count}</b>\nВыкупили: <b>{buyout_count}</b>\nОтменили: <b>{cancel_count}</b>",
+      "fields": [
+        {
+          "match": {
+            "metric": "funnel",
+            "dataset": "funnel",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "open_count",
+          "label": "open_count",
+          "formatter": "number"
+        },
+        {
+          "path": "cart_count",
+          "label": "cart_count",
+          "formatter": "number"
+        },
+        {
+          "path": "order_count",
+          "label": "order_count",
+          "formatter": "number"
+        },
+        {
+          "path": "buyout_count",
+          "label": "buyout_count",
+          "formatter": "number"
+        },
+        {
+          "path": "cancel_count",
+          "label": "cancel_count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"funnel\", \"metric\": \"cart_count\"}]",
+    "changes": {
+      "title_template": "<b>Добавления в корзину</b>{period_heading}\n\nДобавили в корзину: <b>{cart_count}</b>",
+      "fields": [
+        {
+          "match": {
+            "metric": "cart_count",
+            "dataset": "funnel",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "cart_count",
+          "label": "cart_count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"funnel\", \"metric\": \"cart_count\"}]",
+    "changes": {
+      "title_template": "<b>Чаще добавляют в корзину</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "cart_count",
+            "dataset": "funnel",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "За этот период добавлений в корзину нет.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "count",
+                "path": "cart_count",
+                "formatter": "number"
+              }
+            ],
+            "item_template": "• {title} — <b>{count}</b> добавлений.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"funnel\", \"metric\": \"cart_count\"}]",
+    "changes": {
+      "title_template": "<b>Реже добавляют в корзину</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "cart_count",
+            "dataset": "funnel",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "За этот период добавлений в корзину нет.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "count",
+                "path": "cart_count",
+                "formatter": "number"
+              }
+            ],
+            "item_template": "• {title} — <b>{count}</b> добавлений.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"funnel\", \"metric\": \"cart_count\"}]",
+    "changes": {
+      "title_template": "<b>Добавления в корзину</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "cart_count",
+            "dataset": "funnel",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "За этот период добавлений в корзину нет.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "count",
+                "path": "cart_count",
+                "formatter": "number"
+              }
+            ],
+            "item_template": "• {title} — <b>{count}</b> добавлений.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"sales\", \"metric\": \"sales_count\"}]",
+    "changes": {
+      "title_template": "<b>Выкупы и возвраты</b>{period_heading}\n\nВыкупили: <b>{sales_count}</b>\nВозвратов: <b>{return_count}</b>",
+      "fields": [
+        {
+          "match": {
+            "metric": "sales_count",
+            "dataset": "sales",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "sales_count",
+          "label": "sales_count",
+          "formatter": "number"
+        },
+        {
+          "path": "return_count",
+          "label": "return_count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "status_text": {
+              "no_data": "Данных о выкупах и возвратах пока нет."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"sales\", \"metric\": \"sales_count\"}]",
+    "changes": {
+      "title_template": "<b>Лидеры по выкупам</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "sales_count",
+            "dataset": "sales",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b> выкупов.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"sales\", \"metric\": \"sales_count\"}]",
+    "changes": {
+      "title_template": "<b>Меньше выкупают</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "sales_count",
+            "dataset": "sales",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b> выкупов.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"sales\", \"metric\": \"sales_count\"}]",
+    "changes": {
+      "title_template": "<b>Выкупы по товарам</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "sales_count",
+            "dataset": "sales",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b> выкупов.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"sales\", \"metric\": \"return_count\"}]",
+    "changes": {
+      "title_template": "<b>Выкупы и возвраты</b>{period_heading}\n\nВыкупили: <b>{sales_count}</b>\nВозвратов: <b>{return_count}</b>",
+      "fields": [
+        {
+          "match": {
+            "metric": "return_count",
+            "dataset": "sales",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "sales_count",
+          "label": "sales_count",
+          "formatter": "number"
+        },
+        {
+          "path": "return_count",
+          "label": "return_count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "status_text": {
+              "no_data": "Данных о выкупах и возвратах пока нет."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"sales\", \"metric\": \"return_count\"}]",
+    "changes": {
+      "title_template": "<b>Больше трат на рекламу</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "return_count",
+            "dataset": "sales",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b> возвратов.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"sales\", \"metric\": \"return_count\"}]",
+    "changes": {
+      "title_template": "<b>Меньше трат на рекламу</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "return_count",
+            "dataset": "sales",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b> возвратов.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"sales\", \"metric\": \"return_count\"}]",
+    "changes": {
+      "title_template": "<b>Расходы на рекламу</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "return_count",
+            "dataset": "sales",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b> возвратов.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"ads\", \"marketplace\": \"wb\", \"metric\": \"spend\"}]",
+    "changes": {
+      "title_template": "<b>Расходы на рекламу</b>{period_heading}\n\nНа рекламу потрачено: <b>{spend}</b> ₽",
+      "fields": [
+        {
+          "match": {
+            "metric": "spend",
+            "dataset": "ads",
+            "analysis": "metric_value",
+            "marketplace": "wb"
+          }
+        },
+        {
+          "path": "spend",
+          "label": "spend",
+          "formatter": "number"
+        },
+        {
+          "path": "currency",
+          "label": "currency",
+          "formatter": "html_text"
+        },
+        {
+          "template": {
+            "status_text": {
+              "no_data": "Данных о рекламе пока нет."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"ads\", \"metric\": \"spend\"}]",
+    "changes": {
+      "title_template": "<b>Больше трат на рекламу</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "spend",
+            "dataset": "ads",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"ads\", \"metric\": \"spend\"}]",
+    "changes": {
+      "title_template": "<b>Меньше трат на рекламу</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "spend",
+            "dataset": "ads",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"ads\", \"metric\": \"spend\"}]",
+    "changes": {
+      "title_template": "<b>Расходы на рекламу</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "spend",
+            "dataset": "ads",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"profit\", \"metric\": \"total_expense_amount\"}]",
+    "changes": {
+      "title_template": "<b>Расходы Wildberries</b>{period_heading}\n\nРасходы WB: <b>{amount}</b> руб.",
+      "fields": [
+        {
+          "match": {
+            "metric": "total_expense_amount",
+            "dataset": "profit",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "total_expense_amount",
+          "label": "amount",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "status_text": {
+              "no_data": "Данных для этого финансового показателя пока нет."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"profit\", \"metric\": \"total_expense_amount\"}]",
+    "changes": {
+      "title_template": "<b>Больше расходов WB</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "total_expense_amount",
+            "dataset": "profit",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"profit\", \"metric\": \"total_expense_amount\"}]",
+    "changes": {
+      "title_template": "<b>Меньше расходов WB</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "total_expense_amount",
+            "dataset": "profit",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"profit\", \"metric\": \"total_expense_amount\"}]",
+    "changes": {
+      "title_template": "<b>Расходы WB по товарам</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "total_expense_amount",
+            "dataset": "profit",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"profit\", \"metric\": \"net_profit\"}]",
+    "changes": {
+      "title_template": "<b>Чистая прибыль</b>{period_heading}\n\nЧистая прибыль: <b>{amount}</b> руб.",
+      "fields": [
+        {
+          "match": {
+            "metric": "net_profit",
+            "dataset": "profit",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "net_profit",
+          "label": "amount",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "status_text": {
+              "no_data": "Данных для этого финансового показателя пока нет."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"profit\", \"metric\": \"net_profit\"}]",
+    "changes": {
+      "title_template": "<b>Больше прибыли</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "net_profit",
+            "dataset": "profit",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"profit\", \"metric\": \"net_profit\"}]",
+    "changes": {
+      "title_template": "<b>Меньше прибыли</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "net_profit",
+            "dataset": "profit",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"profit\", \"metric\": \"net_profit\"}]",
+    "changes": {
+      "title_template": "<b>Прибыль по товарам</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "net_profit",
+            "dataset": "profit",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"reviews\", \"metric\": \"reviews_count\"}]",
+    "changes": {
+      "title_template": "<b>Отзывы покупателей</b>{period_heading}\n\nПолучили отзывов: <b>{reviews_count}</b>",
+      "fields": [
+        {
+          "match": {
+            "metric": "reviews_count",
+            "dataset": "reviews",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "reviews_count",
+          "label": "reviews_count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "status_text": {
+              "no_data": "Записей об отзывах за этот период нет."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"reviews\", \"metric\": \"reviews_count\"}]",
+    "changes": {
+      "title_template": "<b>Больше отзывов</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "reviews_count",
+            "dataset": "reviews",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"reviews\", \"metric\": \"reviews_count\"}]",
+    "changes": {
+      "title_template": "<b>Меньше отзывов</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "reviews_count",
+            "dataset": "reviews",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"reviews\", \"metric\": \"reviews_count\"}]",
+    "changes": {
+      "title_template": "<b>Отзывы по товарам</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "reviews_count",
+            "dataset": "reviews",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"prices\", \"metric\": \"final_price\"}]",
+    "changes": {
+      "title_template": "<b>Цены товаров</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "final_price",
+            "dataset": "prices",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "as_of",
+          "label": "as_of",
+          "formatter": "html_text"
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "size",
+                "path": "size_name",
+                "formatter": "html_text"
+              },
+              {
+                "name": "price",
+                "path": "final_price",
+                "formatter": "number"
+              },
+              {
+                "name": "currency",
+                "path": "currency",
+                "formatter": "html_text"
+              }
+            ],
+            "status_text": {
+              "no_data": "Записей о ценах для этого товара нет."
+            },
+            "item_template": "• {title}, размер {size}: <b>{price}</b> {currency}.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"products\", \"metric\": \"products_count\"}]",
+    "changes": {
+      "title_template": "<b>Каталог товаров</b>\n\nТоваров: <b>{products_count}</b>",
+      "fields": [
+        {
+          "match": {
+            "metric": "products_count",
+            "dataset": "products",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "products_count",
+          "label": "products_count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"metric\", \"metric\": \"total_stock_value\"}]",
+    "changes": {
+      "title_template": "<b>Стоимость остатков</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "total_stock_value",
+            "dataset": "metric",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "as_of",
+          "label": "as_of",
+          "formatter": "html_text"
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Сохранённого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b> руб.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"ads\", \"marketplace\": \"wb\", \"metric\": \"ads_spend\"}]",
+    "changes": {
+      "title_template": "<b>Расходы на рекламу</b>{period_heading}\n\nНа рекламу потрачено: <b>{spend}</b> ₽",
+      "fields": [
+        {
+          "match": {
+            "metric": "ads_spend",
+            "dataset": "ads",
+            "analysis": "metric_value",
+            "marketplace": "wb"
+          }
+        },
+        {
+          "path": "spend",
+          "label": "spend",
+          "formatter": "number"
+        },
+        {
+          "path": "currency",
+          "label": "currency",
+          "formatter": "html_text"
+        },
+        {
+          "template": {
+            "status_text": {
+              "no_data": "Данных о рекламе пока нет."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"best\", \"dataset\": \"ads\", \"metric\": \"ads_spend\"}]",
+    "changes": {
+      "title_template": "<b>Больше трат на рекламу</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "ads_spend",
+            "dataset": "ads",
+            "analysis": "best"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"ads\", \"metric\": \"ads_spend\"}]",
+    "changes": {
+      "title_template": "<b>Меньше трат на рекламу</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "ads_spend",
+            "dataset": "ads",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"ads\", \"metric\": \"ads_spend\"}]",
+    "changes": {
+      "title_template": "<b>Расходы на рекламу</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "metric": "ads_spend",
+            "dataset": "ads",
+            "analysis": "rank"
+          }
+        },
+        {
+          "template": {
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "Данных для этого показателя пока нет."
+            },
+            "item_template": "• {title} — <b>{value}</b>.",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"entity\": \"store\", \"metric\": \"funnel\"}]",
+    "changes": {
+      "title_template": "<b>Воронка магазина</b> · {period_duration}\n{period}\n\nПосмотрели карточки: <b>{open_count}</b> · {open_count_change}\nДобавили в корзину: <b>{cart_count}</b> · {cart_count_change}\nЗаказали: <b>{order_count}</b> · {order_count_change}\nВыкупили: <b>{buyout_count}</b> · {buyout_count_change}\nОтменили: <b>{cancel_count}</b> · {cancel_count_change}",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "funnel",
+            "dataset": "funnel",
+            "analysis": "compare"
+          }
+        },
+        {
+          "path": "title",
+          "label": "title",
+          "formatter": "html_text"
+        },
+        {
+          "path": "previous_date_from",
+          "label": "previous_from",
+          "formatter": "html_text"
+        },
+        {
+          "path": "previous_date_to",
+          "label": "previous_to",
+          "formatter": "html_text"
+        },
+        {
+          "path": "comparison.open_count.current",
+          "label": "open_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.open_count",
+          "label": "open_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "path": "comparison.cart_count.current",
+          "label": "cart_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.cart_count",
+          "label": "cart_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "path": "comparison.order_count.current",
+          "label": "order_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.order_count",
+          "label": "order_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "path": "comparison.buyout_count.current",
+          "label": "buyout_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.buyout_count",
+          "label": "buyout_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "path": "comparison.cancel_count.current",
+          "label": "cancel_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.cancel_count",
+          "label": "cancel_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "template": {
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"entity\": \"product\", \"metric\": \"funnel\"}]",
+    "changes": {
+      "title_template": "<b>Воронка товара</b>{period_heading}\n\n{title}\n\nПосмотрели карточки: <b>{open_count}</b> · {open_count_change}\nДобавили в корзину: <b>{cart_count}</b> · {cart_count_change}\nЗаказали: <b>{order_count}</b> · {order_count_change}\nВыкупили: <b>{buyout_count}</b> · {buyout_count_change}\nОтменили: <b>{cancel_count}</b> · {cancel_count_change}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "funnel",
+            "dataset": "funnel",
+            "analysis": "compare"
+          }
+        },
+        {
+          "path": "title",
+          "label": "title",
+          "formatter": "html_text"
+        },
+        {
+          "path": "previous_date_from",
+          "label": "previous_from",
+          "formatter": "html_text"
+        },
+        {
+          "path": "previous_date_to",
+          "label": "previous_to",
+          "formatter": "html_text"
+        },
+        {
+          "path": "comparison.open_count.current",
+          "label": "open_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.open_count",
+          "label": "open_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "path": "comparison.cart_count.current",
+          "label": "cart_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.cart_count",
+          "label": "cart_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "path": "comparison.order_count.current",
+          "label": "order_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.order_count",
+          "label": "order_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "path": "comparison.buyout_count.current",
+          "label": "buyout_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.buyout_count",
+          "label": "buyout_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "path": "comparison.cancel_count.current",
+          "label": "cancel_count",
+          "formatter": "number"
+        },
+        {
+          "path": "comparison.cancel_count",
+          "label": "cancel_count_change",
+          "options": {
+            "unchanged": "без изменений",
+            "zero_baseline": "было 0"
+          },
+          "formatter": "change"
+        },
+        {
+          "template": {
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"positive\", \"metric\": \"open_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Просмотры</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "open_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "positive"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров с ростом нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"negative\", \"metric\": \"open_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Просмотры</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "open_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "negative"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров со снижением нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"positive\", \"metric\": \"cart_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Добавления в корзину</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "cart_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "positive"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров с ростом нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"negative\", \"metric\": \"cart_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Добавления в корзину</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "cart_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "negative"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров со снижением нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"positive\", \"metric\": \"order_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Заказы в воронке</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "order_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "positive"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров с ростом нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"negative\", \"metric\": \"order_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Заказы в воронке</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "order_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "negative"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров со снижением нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"positive\", \"metric\": \"buyout_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Выкупы в воронке</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "buyout_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "positive"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров с ростом нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"negative\", \"metric\": \"buyout_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Выкупы в воронке</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "buyout_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "negative"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров со снижением нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"positive\", \"metric\": \"cancel_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Отмены в воронке</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "cancel_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "positive"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров с ростом нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"funnel\", \"direction\": \"negative\", \"metric\": \"cancel_count\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Отмены в воронке</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "cancel_count",
+            "dataset": "funnel",
+            "analysis": "compare",
+            "direction": "negative"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров со снижением нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  }
+                ],
+                "item_template": "• {title}: <b>{pct}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"orders\", \"entity\": \"product\", \"metric\": \"orders_amount\"}]",
+    "changes": {
+      "title_template": "<b>Сумма заказов по товарам</b>{period_heading}\n\n{items}\n\nИтого: <b>{amount}</b>",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "orders_amount",
+            "dataset": "orders",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "value",
+          "label": "amount",
+          "formatter": "money"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Нет товаров с ненулевой суммой.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "amount",
+                    "path": "orders_amount",
+                    "formatter": "money"
+                  }
+                ],
+                "item_template": "{title} — <b>{amount}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"orders\", \"entity\": \"store\", \"metric\": \"orders_amount\"}]",
+    "changes": {
+      "title_template": "<b>Сумма заказов магазина</b>{period_heading}\n\nПо магазину заказали на <b>{amount}</b>.",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "orders_amount",
+            "dataset": "orders",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "value",
+          "label": "amount",
+          "formatter": "money"
+        },
+        {
+          "template": {
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"action\": \"execute\", \"dataset\": \"stocks\", \"entity\": \"product\"}]",
+    "changes": {
+      "title_template": "<b>Остатки товаров</b>{period_heading}\n\n{items}\n\nИтого: <b>{total}</b>",
+      "fields": [
+        {
+          "match": {
+            "action": "execute",
+            "entity": "product",
+            "dataset": "stocks"
+          }
+        },
+        {
+          "path": "value",
+          "label": "total",
+          "formatter": "qty"
+        },
+        {
+          "path": "as_of",
+          "label": "as_of",
+          "formatter": "html_text"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров с известными остатками не найдено.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "qty",
+                    "path": "total_quantity",
+                    "formatter": "qty"
+                  }
+                ],
+                "item_template": "• {title} — <b>{qty}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"stocks\", \"entity\": \"store\", \"metric\": \"stock_qty\"}]",
+    "changes": {
+      "title_template": "<b>Остатки товаров</b>{period_heading}\n\n{items}\n\nИтого: <b>{total}</b>",
+      "fields": [
+        {
+          "match": {
+            "entity": "store",
+            "metric": "stock_qty",
+            "dataset": "stocks",
+            "analysis": "metric_value"
+          }
+        },
+        {
+          "path": "value",
+          "label": "total",
+          "formatter": "qty"
+        },
+        {
+          "path": "as_of",
+          "label": "as_of",
+          "formatter": "html_text"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Данных об остатках нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "qty",
+                    "path": "total_quantity",
+                    "formatter": "qty"
+                  }
+                ],
+                "item_template": "• {title} — <b>{qty}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"dataset\": \"followups\", \"is_valid_question\": true, \"view\": \"unanswered\"}]",
+    "changes": {
+      "title_template": "<b>Вопросы без ответа</b>{period_heading}\n\nВсего: <b>{count}</b>\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "unanswered",
+            "dataset": "followups",
+            "is_valid_question": true
+          }
+        },
+        {
+          "path": "questions_count",
+          "label": "count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Вопросов без ответа нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "text",
+                    "path": "question_text",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "created",
+                    "path": "question_created_at",
+                    "options": {
+                      "style": "day_month"
+                    },
+                    "formatter": "date"
+                  }
+                ],
+                "item_template": "<b>{title} · {created}</b>\n• {text}\n"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"dataset\": \"followups\", \"is_valid_question\": true, \"view\": \"topics\"}]",
+    "changes": {
+      "title_template": "<b>О чём спрашивают</b>{period_heading}\n\n{product_title}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "topics",
+            "dataset": "followups",
+            "is_valid_question": true
+          }
+        },
+        {
+          "path": "questions_count",
+          "label": "count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Таких тем в загруженных текстах не найдено.",
+                "item_fields": [
+                  {
+                    "name": "topic",
+                    "path": "topic",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "count",
+                    "path": "questions_count",
+                    "formatter": "number"
+                  }
+                ],
+                "item_template": "• {topic} — <b>{count}</b>"
+              }
+            ],
+            "empty_text": "Подходящих тем не найдено.",
+            "status_text": {
+              "no_data": "Загруженных отзывов по этому запросу не найдено.",
+              "no_text": "У загруженных записей нет текста для разбора тем.",
+              "incomplete": "Тексты ещё разбираются. Попробуй спросить немного позже."
+            },
+            "default_period": "все загруженные вопросы",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        },
+        {
+          "path": "request.product.title",
+          "label": "product_title",
+          "formatter": "html_text"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"dataset\": \"reviews\", \"is_valid_question\": true, \"view\": \"negative\"}]",
+    "changes": {
+      "title_template": "<b>Что не нравится покупателям</b>{period_heading}\n\n{product_title}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "negative",
+            "dataset": "reviews",
+            "is_valid_question": true
+          }
+        },
+        {
+          "path": "reviews_count",
+          "label": "count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Таких тем в загруженных текстах не найдено.",
+                "item_fields": [
+                  {
+                    "name": "topic",
+                    "path": "topic",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "count",
+                    "path": "reviews_count",
+                    "formatter": "number"
+                  }
+                ],
+                "item_template": "• {topic} — <b>{count}</b>"
+              }
+            ],
+            "empty_text": "Подходящих тем не найдено.",
+            "status_text": {
+              "no_data": "Загруженных отзывов по этому запросу не найдено.",
+              "no_text": "У загруженных записей нет текста для разбора тем.",
+              "incomplete": "Тексты ещё разбираются. Попробуй спросить немного позже."
+            },
+            "default_period": "все загруженные отзывы",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        },
+        {
+          "path": "request.product.title",
+          "label": "product_title",
+          "formatter": "html_text"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"dataset\": \"reviews\", \"is_valid_question\": true, \"view\": \"positive\"}]",
+    "changes": {
+      "title_template": "<b>Что нравится покупателям</b>{period_heading}\n\n{product_title}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "positive",
+            "dataset": "reviews",
+            "is_valid_question": true
+          }
+        },
+        {
+          "path": "reviews_count",
+          "label": "count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Таких тем в загруженных текстах не найдено.",
+                "item_fields": [
+                  {
+                    "name": "topic",
+                    "path": "topic",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "count",
+                    "path": "reviews_count",
+                    "formatter": "number"
+                  }
+                ],
+                "item_template": "• {topic} — <b>{count}</b>"
+              }
+            ],
+            "empty_text": "Подходящих тем не найдено.",
+            "status_text": {
+              "no_data": "Загруженных отзывов по этому запросу не найдено.",
+              "no_text": "У загруженных записей нет текста для разбора тем.",
+              "incomplete": "Тексты ещё разбираются. Попробуй спросить немного позже."
+            },
+            "default_period": "все загруженные отзывы",
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        },
+        {
+          "path": "request.product.title",
+          "label": "product_title",
+          "formatter": "html_text"
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"dataset\": \"reviews\", \"is_valid_question\": true, \"view\": \"unanswered\"}]",
+    "changes": {
+      "title_template": "<b>Отзывы без ответа</b>{period_heading}\n\nВсего: <b>{count}</b>\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "unanswered",
+            "dataset": "reviews",
+            "is_valid_question": true
+          }
+        },
+        {
+          "path": "reviews_count",
+          "label": "count",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Отзывов с текстом без ответа нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "text",
+                    "path": "text",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "created",
+                    "path": "created_at",
+                    "options": {},
+                    "formatter": "date"
+                  },
+                  {
+                    "name": "rating",
+                    "path": "rating",
+                    "formatter": "number"
+                  }
+                ],
+                "item_template": "<b>{title} · {created}</b>\n★ <b>{rating}</b>/5 · {text}\n"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"orders\", \"direction\": \"negative\", \"metric\": \"orders_amount\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Падение суммы заказов</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "orders_amount",
+            "dataset": "orders",
+            "analysis": "compare",
+            "direction": "negative"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров со снижением нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  },
+                  {
+                    "name": "amount",
+                    "path": "current",
+                    "formatter": "money"
+                  }
+                ],
+                "item_template": "• {title}: <b>{amount}</b> · {pct}"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"compare\", \"dataset\": \"orders\", \"direction\": \"positive\", \"metric\": \"orders_amount\", \"view\": \"contributors\"}]",
+    "changes": {
+      "title_template": "<b>Рост суммы заказов</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "view": "contributors",
+            "metric": "orders_amount",
+            "dataset": "orders",
+            "analysis": "compare",
+            "direction": "positive"
+          }
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров с ростом нет.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "pct",
+                    "path": "change_pct",
+                    "options": {
+                      "zero_baseline": "было 0"
+                    },
+                    "formatter": "signed_percent"
+                  },
+                  {
+                    "name": "amount",
+                    "path": "current",
+                    "formatter": "money"
+                  }
+                ],
+                "item_template": "• {title}: <b>{amount}</b> · {pct}"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"metric_value\", \"dataset\": \"stocks\", \"is_valid_question\": true, \"metric\": \"days_left\"}]",
+    "changes": {
+      "title_template": "<b>Запас товара</b>{period_heading}\n\n{title}\nЗапаса хватит примерно на <b>{days}</b>.",
+      "fields": [
+        {
+          "match": {
+            "metric": "days_left",
+            "dataset": "stocks",
+            "analysis": "metric_value",
+            "is_valid_question": true
+          }
+        },
+        {
+          "path": "request.product.title",
+          "label": "title",
+          "formatter": "html_text"
+        },
+        {
+          "path": "value",
+          "label": "days",
+          "options": {
+            "decimals": 0
+          },
+          "formatter": "days"
+        },
+        {
+          "template": {
+            "status_text": {
+              "no_data": "Остатки этого товара не найдены.",
+              "no_orders": "За выбранный период заказов не было — пока не могу оценить, когда закончится запас.",
+              "incomplete": "Для прогноза пока недостаточно данных по заказам."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"dataset\": \"orders\", \"entity\": \"variant\", \"is_valid_question\": true, \"metric\": \"orders_count\"}]",
+    "changes": {
+      "title_template": "<b>Заказы по размерам</b>{period_heading}\n\n{title}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "variant",
+            "metric": "orders_count",
+            "dataset": "orders",
+            "is_valid_question": true
+          }
+        },
+        {
+          "path": "request.product.title",
+          "label": "title",
+          "formatter": "html_text"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "За выбранный период заказов не было.",
+                "item_fields": [
+                  {
+                    "name": "size",
+                    "path": "size_name",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "count",
+                    "path": "orders_count",
+                    "formatter": "number"
+                  }
+                ],
+                "item_template": "• Размер {size}: <b>{count}</b>"
+              }
+            ],
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"rank\", \"dataset\": \"stocks\", \"is_valid_question\": true, \"metric\": \"days_left\"}]",
+    "changes": {
+      "title_template": "<b>Что пора пополнить</b> · {period_duration}\n{period}\n\n{items}\n\nПроверено: {checked} товаров",
+      "fields": [
+        {
+          "match": {
+            "metric": "days_left",
+            "dataset": "stocks",
+            "analysis": "rank",
+            "is_valid_question": true
+          }
+        },
+        {
+          "path": "as_of",
+          "label": "asof",
+          "formatter": "date"
+        },
+        {
+          "path": "checked_products",
+          "label": "checked",
+          "formatter": "number"
+        },
+        {
+          "template": {
+            "sections": [
+              {
+                "name": "items",
+                "rows_path": "rows",
+                "empty_text": "Товаров с запасом до 14 дней не найдено.",
+                "item_fields": [
+                  {
+                    "name": "title",
+                    "path": "title",
+                    "formatter": "html_text"
+                  },
+                  {
+                    "name": "qty",
+                    "path": "warehouse_quantity",
+                    "formatter": "qty"
+                  },
+                  {
+                    "name": "days",
+                    "path": "days_left",
+                    "options": {
+                      "decimals": 0
+                    },
+                    "formatter": "days"
+                  }
+                ],
+                "item_template": "• {title}: <b>{days}</b>"
+              }
+            ],
+            "status_text": {
+              "no_data": "Остатки не найдены.",
+              "incomplete": "Для прогноза пока недостаточно данных по заказам."
+            },
+            "omit_same_year": true,
+            "telegram_format": "html_bold"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "table": "system_ai_answer_rules",
+    "semantic_key": "[\"simple\", \"ru\", \"compact_text\", {\"analysis\": \"worst\", \"dataset\": \"funnel\", \"entity\": \"product\", \"metric\": \"views_without_carts\"}]",
+    "changes": {
+      "question_type": "simple",
+      "template_name": "compact_text",
+      "language": "ru",
+      "title_template": "<b>Просмотры без корзин</b>{period_heading}\n\n{items}",
+      "fields": [
+        {
+          "match": {
+            "entity": "product",
+            "metric": "views_without_carts",
+            "dataset": "funnel",
+            "analysis": "worst"
+          }
+        },
+        {
+          "template": {
+            "rows_path": "rows",
+            "empty_text": "Товаров с просмотрами, но без добавлений в корзину не найдено.",
+            "item_fields": [
+              {
+                "name": "title",
+                "path": "title",
+                "formatter": "html_text"
+              },
+              {
+                "name": "value",
+                "path": "value",
+                "formatter": "number"
+              }
+            ],
+            "status_text": {
+              "no_data": "За выбранный период данных для этого показателя нет.",
+              "no_orders": "За этот период заказов нет, поэтому такой показатель пока не посчитать.",
+              "incomplete": "Пока не хватает загруженных данных за весь выбранный период. Числа не буду угадывать.",
+              "no_product": "В текущем снимке нет остатков этого товара. Нужна проверка данных WB."
+            },
+            "item_template": "• {title}: просмотров — <b>{value}</b>, корзин — <b>0</b>",
+            "omit_same_year": true,
+            "telegram_format": "html_bold",
+            "cancellation_template": "\nИз них отменили <b>{cancelled_count}</b>.",
+            "item_cancellation_template": " (отменили <b>{cancelled_count}</b>)"
+          }
+        },
+        {
+          "path": "meta.total_groups",
+          "label": "total",
+          "formatter": "number"
+        }
+      ],
+      "priority": 4,
+      "is_active": true
+    }
+  },
+  {
+    "table": "system_metric_ai_bot_rules",
+    "semantic_key": "[\"funnel\", \"carts_without_orders\"]",
+    "changes": {
+      "aliases_ru": [
+        "какие товары добавляют в корзину, но не оформляют заказ",
+        "где добавляют в корзину, но не покупают",
+        "где добавляют в корзину но не покупают",
+        "какие товары добавляют в корзину, но не покупают",
+        "корзины без заказов"
+      ]
+    }
+  },
+  {
+    "table": "system_metric_ai_bot_rules",
+    "semantic_key": "[\"orders\", \"regions_store\"]",
+    "changes": {
+      "aliases_ru": [
+        "какой регион дает больше всего заказов по всему магазину",
+        "какие города чаще заказывают",
+        "в какие города чаще заказывают",
+        "в какие регионы чаще заказывают",
+        "какие регионы чаще заказывают"
+      ]
+    }
+  },
+  {
+    "table": "system_metric_ai_bot_rules",
+    "semantic_key": "[\"funnel\", \"views_without_carts\"]",
+    "changes": {
+      "dataset": "funnel",
+      "metric": "views_without_carts",
+      "aliases_ru": [
+        "где смотрят, но не добавляют в корзину",
+        "где смотрят но не добавляют в корзину",
+        "какие товары смотрят, но не добавляют в корзину",
+        "просмотры без корзин"
+      ],
+      "aliases_en": [],
+      "default_entity": "product",
+      "is_active": true,
+      "answer_scope": "top",
+      "default_limit": 5
+    }
+  }
+]

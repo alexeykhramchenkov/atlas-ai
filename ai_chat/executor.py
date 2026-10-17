@@ -91,6 +91,10 @@ class Executor:
                 marketplace=request.get('marketplace','wb'),product_key=request.get('product_key'),
                 include_topics=True,
                 supabase=self.supabase,**dates)
+            if request.get('product_keys') is not None:
+                from ai_chat.analysis.analysis_type.filter import run as filter_rows
+                selected=filter_rows(rows=facts['reviews'],conditions=[{'field':'product_key','operator':'in','value':request['product_keys']}])['rows']
+                facts={**facts,'reviews':selected,'reviews_count':len(selected)}
             analysis = summarize(facts['reviews'],source_type='review',sentiment=request['view'])
             return {'dataset':dataset_name,'analysis':analysis_name,'metric':'reviews_count',
                     'entity':request.get('entity'),'view':request['view'],'status':'ok',
@@ -330,6 +334,18 @@ class Executor:
                     level="variant" if entity in {"variant","warehouse","variant_warehouse","product_warehouse"} else "product",supabase=self.supabase)
             except StockDataUnavailableError as error:
                 return {**context,"status":"no_data","as_of":error.as_of}
+            if request.get('product_keys') is not None:
+                from ai_chat.analysis.analysis_type.filter import run as filter_rows
+                from ai_chat.analysis.analysis_type.ranked import group_rows
+                scoped=filter_rows(rows=facts['products'],conditions=[{'field':'product_key','operator':'in','value':request['product_keys']}])['rows']
+                totals={}
+                for quantity in ('warehouse_quantity','to_customer_quantity','from_customer_quantity','total_quantity'):
+                    if any(row.get(quantity) is None for row in scoped):
+                        if quantity in facts:totals[quantity]=None
+                        continue
+                    groups=group_rows(rows=scoped,config={'group_by':[],'group_fields':[],'value_field':quantity,'aggregation':'sum'})
+                    totals[quantity]=groups[0][quantity] if groups else 0
+                facts={**facts,**totals,'products':scoped}
             if request['metric']=='days_left':
                 from ai_chat.internal_tools.get_orders import get_orders, IncompleteOrdersError
                 from ai_chat.metric.stocks import _calculate_days_left

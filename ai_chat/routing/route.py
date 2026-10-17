@@ -150,6 +150,20 @@ def _route_request(
         resolve_reference=lambda q,m: resolve_product_from_memory(question=q,memory=m))
     if buyer_questions is not None:
         return buyer_questions
+    from ai_chat.routing.seller_questions import resolve_seller_question, BY_METRIC
+    def registered_seller(q):
+        try:
+            return next((m.metric for m in resolve_metrics(question=q,supabase=supabase) if m.metric in BY_METRIC),None)
+        except Exception:
+            return None
+    seller_request = resolve_seller_question(question, memory, request_context,
+        resolve_registered=registered_seller,
+        resolve_explicit=lambda q: resolve_product(question=q, supabase=supabase,
+            user_id=request_context["user_id"], shop_id=request_context["shop_id"], marketplace=request_context.get("marketplace", "wb")),
+        resolve_reference=lambda q, m: resolve_product_from_memory(question=q, memory=m))
+    if seller_request is not None:
+        return seller_request
+
     from ai_chat.routing.llm_fallback import resolve_funnel_change
     funnel_change = resolve_funnel_change(question, memory=memory, request_context=request_context)
     if funnel_change is not None:
@@ -192,19 +206,16 @@ def _route_request(
             if explicit_product:
                 req["product"] = explicit_product
             if not req.get("product_key"):
-                return {**req, "is_valid_question": False, "error_code": "unclear_question",
-                        "message": "По какому товару? Напиши название или артикул WB."}
+                if re.search(r'\bтовар(?:а|у|ом)?\b|\b\d{6,12}\b',chain_base):
+                    return {**req,'is_valid_question':False,'error_code':'unclear_question',
+                            'message':'По какому товару? Напиши название или артикул WB.'}
+                from datetime import datetime, timedelta
+                from zoneinfo import ZoneInfo
+                end=datetime.now(ZoneInfo('Europe/Moscow')).date()-timedelta(days=1)
+                req.update(metric='regions_store',scope='store')
+                if not req.get('date_from'):
+                    req.update(date_from=(end-timedelta(days=days-1)).isoformat(),date_to=end.isoformat())
         return req
-
-    from ai_chat.routing.seller_questions import resolve_seller_question, BY_METRIC
-    seller_request = resolve_seller_question(question, memory, request_context,
-        resolve_registered=lambda q: next((m.metric for m in resolve_metrics(question=q, supabase=supabase)
-            if m.metric in BY_METRIC), None),
-        resolve_explicit=lambda q: resolve_product(question=q, supabase=supabase,
-            user_id=request_context["user_id"], shop_id=request_context["shop_id"], marketplace=request_context.get("marketplace", "wb")),
-        resolve_reference=lambda q, m: resolve_product_from_memory(question=q, memory=m))
-    if seller_request is not None:
-        return seller_request
 
     if any(marker in text for marker in ("законч", "заканч", "пополн")):
         product = resolve_product(question=question,supabase=supabase,

@@ -22,6 +22,7 @@ QUESTIONS = [
  (19,'Сколько стоит один заказ из рекламы?','ads_cpo','ads','metric_value','store',7),
  (20,'Какие рекламные кампании стали работать хуже?','ads_decline','ads','worst','store',7),
  (21,'Какие товары смотрят, но не заказывают?','views_without_orders','funnel','worst','product',7),
+ (31,'Какие товары смотрят, но не добавляют в корзину?','views_without_carts','funnel','worst','product',7),
  (22,'Какие товары добавляют в корзину, но не оформляют заказ?','carts_without_orders','funnel','worst','product',7),
  (23,'У каких товаров упала конверсия?','conversion_decline','funnel','worst','product',7),
  (25,'Что изменилось в заказах после изменения цены?','price_change_orders','prices','metric_value','product',7),

@@ -328,6 +328,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, *, 
             else:
                 request_context = {**active, "language": language}
                 request = request_context
+                import os
+                if os.getenv("ATLAS_DIALOGUE_PLANNER") == "1":
+                    from core.config import settings
+                    if "yavpdfijnedpsobnbdtn" not in settings.supabase_url:
+                        raise RuntimeError("Dialogue planner release is test-only")
+                    from ai_chat.dialogue import respond
+                    from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+                    answer, result, plan = respond(routing_question, request_context, supabase, executor, journal_id)
+                    request = {**request_context, "dialogue_planner": True}
+                    markup = (ReplyKeyboardMarkup([plan["options"]], one_time_keyboard=True, resize_keyboard=True)
+                              if plan["action"] == "clarify" else ReplyKeyboardRemove())
+                    await send_journal_reply(update, journal_id, answer, request=request, result=result,
+                        status="success", memory_used={"dialogue_state": True}, reply_markup=markup)
+                    log_timing(stage="total_request", started_at=started, source="telegram")
+                    return
                 previous = latest_dialogue_row(telegram_user_id=actor, telegram_chat_id=chat,
                     user_id=active["user_id"], shop_id=active["shop_id"], marketplace=active["marketplace"],
                     supabase=supabase, before_question_id=journal_id)
@@ -455,6 +470,8 @@ async def send_journal_reply(update, journal_id, answer, *, request, result, sta
         rule = resolve_answer_rule(supabase=supabase,
             question_type=request.get('question_type','simple'),
             language=request.get('language','ru'),request=request,result=result or {})
+        if (result or {}).get('presentation_format') == 'html_bold':
+            rule = {'fields':[{'template':{'telegram_format':'html_bold'}}]}
         answer, spans = prepare_text(answer, rule)
     if not update_journal_question(journal_id, router_request=request, result=result, status=status,
             error_message=error_message, answer_text=answer, memory_used=memory_used or {}, delivery_status="pending"):

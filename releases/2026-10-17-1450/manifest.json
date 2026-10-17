@@ -1,0 +1,54 @@
+{
+  "release": "2026-10-17-1450",
+  "previous_production_commit": "822fd0e",
+  "test_snapshot": [
+    {
+      "path": "ai_chat/dialogue.py",
+      "test_sha256": "045454540268f86c189d883b0b35776cbc1bc464cd73a27b6389fcc59bf3da0c",
+      "test_mtime": 1792216526.928499
+    },
+    {
+      "path": "ai_chat/executor.py",
+      "test_sha256": "065e2018e07baf2bd095a3abd46a0f88f843d65893378934cb6fa55af30993b6",
+      "test_mtime": 1792216534.8466685
+    },
+    {
+      "path": "ai_chat/answer_builder/templates.py",
+      "test_sha256": "2579a84660f094f792dedfc0c5a2ac2992b517a26f298e582c14b179bf2412a2",
+      "test_mtime": 1792218677.825803
+    },
+    {
+      "path": "ai_chat/routing/llm_fallback.py",
+      "test_sha256": "e2ab7460c50bc971774c3dec29b4569ff1f4dc7883430a20e27c4c796a3c14a6",
+      "test_mtime": 1792219428.9620588
+    },
+    {
+      "path": "ai_chat/routing/route.py",
+      "test_sha256": "ebb73e08340c231a1ea61e3e994ae17e78825d996ab17328ce375e0e1e9e4b40",
+      "test_mtime": 1792219228.0128427
+    },
+    {
+      "path": "ai_chat/routing/seller_questions.py",
+      "test_sha256": "c236ea3d7b933826aa82e80cb631f1084d251f1afd939bf4e49f7037fc7c3f81",
+      "test_mtime": 1792219061.1871462
+    },
+    {
+      "path": "ai_chat/metric/seller_questions.py",
+      "test_sha256": "9f096ef809fca74059ed026dec7975da81e7e3bd52036f4aab46222b3edd844e",
+      "test_mtime": 1792219547.8171446
+    },
+    {
+      "path": "telegram_bot/handlers.py",
+      "test_sha256": "de0e0bf6385fffd6c9db17347af512cb6868c0f438ef5f99c2a74d838118283a",
+      "test_mtime": 1792216477.569141
+    }
+  ],
+  "rules_changes": 103,
+  "fact_data_copied": false,
+  "get_contracts_changed": false,
+  "dialogue_planner_enabled": false,
+  "excluded": [
+    "local unauthenticated web API"
+  ],
+  "tests_passed": 322
+}

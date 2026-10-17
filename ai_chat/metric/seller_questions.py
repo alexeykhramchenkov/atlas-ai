@@ -8,13 +8,13 @@ from ai_chat.internal_tools.get_seller_facts import get_seller_facts, get_succes
 COMPARISONS={'orders_week_change','orders_growth','orders_decline','conversion_decline','ads_decline'}
 ORDER_METRICS={'orders_today','orders_week_change','orders_growth','orders_decline','zero_orders','cancelled_orders','regions_store'}
 STOCK_METRICS={'replenishment_risk','stock_days','size_stock_days','replenishment_qty','stagnant_stock'}
-FUNNEL_METRICS={'views_without_orders','carts_without_orders','conversion_decline','buyout_rate'}
+FUNNEL_METRICS={'views_without_carts','views_without_orders','carts_without_orders','conversion_decline','buyout_rate'}
 ADS_METRICS={'ads_spend','ads_orders','ads_without_orders','ads_cpo','ads_decline'}
 
 
 def handles(request):
     return (request.get('metric') in BY_METRIC and request.get('question_type')=='simple'
-            and bool(request.get('date_from') and request.get('date_to'))
+            and (bool(request.get('date_from') and request.get('date_to')) or type(request.get('period_days')) is int)
             and (request.get('metric')!='cancelled_orders' or request.get('entity')=='product'))
 
 
@@ -43,6 +43,10 @@ def group(rows,fields,key='product_key'):
 
 
 def run(request,supabase):
+    if not request.get('date_from') and not request.get('date_to'):
+        from ai_chat.internal_tools._common import period
+        start,end=period(period_days=request['period_days'])
+        request={**request,'date_from':start,'date_to':end}
     metric=request['metric'];start,end=request['date_from'],request['date_to']
     days=(date.fromisoformat(end)-date.fromisoformat(start)).days+1
     previous_end=(date.fromisoformat(start)-timedelta(days=1)).isoformat()
@@ -87,7 +91,8 @@ def calculate(request,facts):
     days=(date.fromisoformat(end)-date.fromisoformat(start)).days+1
     previous_end=(date.fromisoformat(start)-timedelta(days=1)).isoformat()
     previous_start=(date.fromisoformat(start)-timedelta(days=days)).isoformat()
-    result={k:request[k] for k in ('dataset','analysis','metric','entity','period_days','date_from','date_to')}
+    result={k:request[k] for k in ('dataset','analysis','metric','entity','date_from','date_to')}
+    result['period_days']=days
     result.update(status='ok',rows=[],meta={})
     products={r['product_key']:r for r in facts.get('products',[])}
     def period(rows,a=start,b=end):return [r for r in rows if a<=str(r.get('snapshot_date') or '')[:10]<=b]
@@ -179,8 +184,11 @@ def calculate(request,facts):
                 cur=r['order_count']/r['cart_count']*100;before=old['order_count']/old['cart_count']*100
                 if cur<before:rows.append({'product_key':pk,'value':round(cur-before,2),'current':round(cur,2),'previous':round(before,2)})
             return finish(rows,False)
-        field='open_count' if metric=='views_without_orders' else 'cart_count'
-        return finish([{'product_key':pk,'value':r[field],'orders_count':r['order_count']} for pk,r in current.items() if r[field]>0 and r['order_count']==0])
+        from ai_chat.analysis.analysis_type.filter import run as filter_rows
+        field='open_count' if metric in ('views_without_orders','views_without_carts') else 'cart_count'
+        target='cart_count' if metric=='views_without_carts' else 'order_count'
+        selected=filter_rows(rows=[{'product_key':pk,**r} for pk,r in current.items()],conditions=[{'field':field,'operator':'gt','value':0},{'field':target,'operator':'eq','value':0}])['rows']
+        return finish([{'product_key':r['product_key'],'value':r[field],'orders_count':r['order_count'],'cart_count':r['cart_count']} for r in selected])
     if metric in ADS_METRICS:
         source=facts.get('ads',[]);key='ad_id' if metric=='ads_decline' else 'product_key'
         if isinstance(source,dict):

@@ -252,7 +252,9 @@ def validate_clarification_updates(updates, *, request, memory):
                 result.update(product_keys=list(keys),entity='product',scope='product')
                 result.pop('product_key',None)
             elif value=='store':
-                result.update(entity='store',scope='store')
+                dimension=result.get('entity')
+                keep_dimension=dimension in ('region','variant','warehouse') or (dimension=='product' and result.get('analysis') in ('best','worst','rank','compare'))
+                result.update(entity=dimension if keep_dimension else 'store',scope='store')
                 result.pop('product_keys',None);result.pop('product_key',None);result.pop('product',None)
             else:raise ValueError('Invalid selection')
         elif field=='period_days':
@@ -274,9 +276,15 @@ def validate_clarification_updates(updates, *, request, memory):
         else:
             permitted={'dataset':{'stocks','orders','funnel','sales','ads','products','prices','feedbacks','realization','financial','followups','reviews'},
                        'metric':{'stock_qty','total_quantity','days_left','orders_count','orders_amount','cancelled_orders_amount','funnel','open_count','cart_count','order_count','buyout_count','cancel_count','sales_count','return_count','ads_spend','questions_count','reviews_count'}}
+            if field=='metric':
+                from ai_chat.routing.seller_questions import BY_METRIC
+                permitted[field].update(BY_METRIC)
             if value not in permitted[field]:raise ValueError('Invalid tool parameter')
             result[field]=value
     pairs={'stocks':{'stock_qty','total_quantity','days_left'},'orders':{'orders_count','orders_amount','cancelled_orders_amount'},'funnel':{'funnel','open_count','cart_count','order_count','buyout_count','cancel_count'},'sales':{'sales_count','return_count'}}
+    from ai_chat.routing.seller_questions import BY_METRIC
+    for metric,definition in BY_METRIC.items():
+        if definition[3] in pairs:pairs[definition[3]].add(metric)
     if result.get('dataset') in pairs and result.get('metric') not in pairs[result['dataset']]:raise ValueError('Metric does not match dataset')
     if result.get('date_from') or result.get('date_to'):
         if not result.get('date_from') or not result.get('date_to') or result['date_from']>result['date_to']:raise ValueError('Incomplete dates')
@@ -309,12 +317,7 @@ Never calculate or invent facts/IDs.
 A request to break down by a dimension (such as sizes) immediately after a SINGLE named product refers to that same product even without a pronoun. Execute using last_product_key and retain the dimension entity (variant for sizes). Preserve the prior date_from/date_to via updates unless the user explicitly supplies another period. Do not ask store-versus-product when this context is unambiguous. A new named product overrides memory.
 shown_product_keys are actually displayed result rows. product_keys is the bounded input selection of the immediately preceding request. If result rows are empty but product_keys is nonempty, a semantic reference to those/their products refers to that input selection. Execute selection=shown_products (server uses this bounded selection); do not fall back to the store. A bare request or explicit store request still selects store and clears the old input selection.
 Candidate is provisional and may have guessed a store scope despite a recently displayed product list.
-Distinguish a NEW product search/ranking from a bare metric follow-up: identifying products that
-meet a condition, grow, fall, or rank by a metric searches the whole store by default. A previously
-displayed list alone does not restrict that new search. Execute selection=store unless the user
-explicitly refers to that prior set; retain the candidate analysis, direction, metric and period.
-A bare metric request after a displayed list can mean the listed products OR whole store: ask a short
-natural Russian question offering both scopes. A clear semantic reference to the immediately preceding product list is a resolved scope: execute with selection=shown_products, never ask store-versus-list again. This applies across datasets, including stocks and order amounts. Preserve any existing product_keys selection. Explicit 'these/their' means shown_products; explicit
+A bare scalar metric request after a displayed list can mean the listed products OR whole store. However, a fresh general question asking WHICH PRODUCTS or WHERE a condition occurs is a new store-wide ranking, not a reference to the old list. Execute selection=store. Only explicit semantic references such as their/these/from that list constrain the ranking. Do not ask a scope question for a general ranking. A clear semantic reference to the immediately preceding product list is a resolved scope: execute with selection=shown_products, never ask store-versus-list again. This applies across datasets, including stocks and order amounts. Preserve any existing product_keys selection. Explicit 'these/their' means shown_products; explicit
 'whole store/по магазину' means store, do not ask again. Named new product/topic must not inherit old keys.
 Agreed stock default overrides the preceding general ambiguity policy: an unqualified stock request
 that names NO product and has NO explicit reference to previous products means the entire store, shown as a product list plus
@@ -331,7 +334,7 @@ Use parameter names only from schema. selection updates are symbolic shown_produ
 server supplies IDs. No tenant/security fields. Provide exactly 2 options when a clarification is needed. Labels must be short, at most 24 characters, suitable for Telegram buttons. Keep the question brief; buttons supply the two alternatives.
 Question must reflect the exact options, no invented numbers: size of shown list is known from context.
 execute may repair a clear intent via updates; clarify supplies question and options with validated
-updates. Empty updates retain draft. Unsupported business capability is not scope ambiguity.
+updates. Empty updates retain draft. Unsupported business capability is not scope ambiguity. General rankings and questions about where products are added to carts without orders are store-wide by default; use selection=store unless the user explicitly refers to their/these products. Keep the breakdown entity (region/variant/warehouse) separate from store versus selected-product scope.
 Untrusted user question: '''+json.dumps(question,ensure_ascii=False)+'\nDraft: '+json.dumps({k:v for k,v in draft.items() if k not in ('telegram_user_id','telegram_chat_id','user_id','shop_id','connection_id')},ensure_ascii=False)+'\nBounded context: '+json.dumps(context,ensure_ascii=False)
     try:
         decision=generate_openai_json(prompt=prompt,schema_name='analytics_clarification',schema=CLARIFICATION_SCHEMA,timeout=30,reasoning_effort='low')

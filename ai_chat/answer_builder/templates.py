@@ -230,8 +230,17 @@ def _render_compact(rule, data, request, language):
         if not data.get(prefix+'date_from') or not data.get(prefix+'date_to'):
             continue
         start,end=date.fromisoformat(data[prefix+'date_from']),date.fromisoformat(data[prefix+'date_to'])
+        values[name+'_duration']=format_value(value=(end-start).days+1,formatter='days',language=language,options={'decimals':0})
         values[name]=(f"{start.day}–{end.day} {months[end.month-1]}" if (start.year,start.month)==(end.year,end.month)
                           else f"{start.day} {months[start.month-1]} {start.year} — {end.day} {months[end.month-1]} {end.year}")
+        if config.get('omit_same_year') and start.year==end.year and start.month!=end.month:
+            values[name]=f'{start.day} {months[start.month-1]} — {end.day} {months[end.month-1]}'
+    values['period_heading']=''
+    if values.get('period'):
+        duration=values.get('period_duration')
+        values['period_heading']=(' · '+duration if duration else '')+'\n'+values['period']
+    elif data.get('as_of'):
+        values['period_heading']='\n'+format_value(value=data['as_of'],formatter='date',language=language)
     def noun(n):
         n=int(n);return 'заказ' if n%10==1 and n%100!=11 else 'заказа' if n%10 in (2,3,4) and n%100 not in (12,13,14) else 'заказов'
     if data.get('orders_count') is not None: values['orders_word']=noun(data['orders_count'])
@@ -254,10 +263,14 @@ def _render_compact(rule, data, request, language):
     values['items']='\n'.join(items)
     for section in config.get('sections') or []:
         section_items = []
-        for row in value(section['rows_path']) or []:
-            item = {field['name']:format_value(value=value(field['path'], row),
+        section_rows = value(section['rows_path']) or []
+        if section.get('limit') is not None:section_rows=section_rows[:max(0,int(section['limit']))]
+        for row in section_rows:
+            item = {field['name']:format_value(value=_extract_first_row_value(row=row,field=field),
                     formatter=field.get('formatter', 'text'), language=language, options=field.get('options'))
                     for field in section['item_fields']}
+            if '{orders_word}' in section['item_template']:
+                item['orders_word']=noun(row.get('orders_count') if row.get('orders_count') is not None else row.get('value',0))
             section_items.append(section['item_template'].format(**item))
         values[section['name']] = '\n'.join(section_items) or section.get('empty_text', '')
     if rows and rows[0].get('value') is not None:
